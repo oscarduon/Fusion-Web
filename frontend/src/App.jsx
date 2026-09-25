@@ -155,7 +155,7 @@ export default function App() {
   useEffect(() => {
     if (selectedMedia && !selectedMedia.preview_b64 && selectedMedia.type !== 'html') {
       const ext = (selectedMedia.type || '').toLowerCase();
-      const binaryExts = ['tif', 'tiff', 'las', 'laz', 'shp', 'shx', 'dbf', 'prj', 'exe', 'dll'];
+      const binaryExts = ['tif', 'tiff', 'las', 'laz', 'shp', 'shx', 'dbf', 'prj', 'exe', 'dll', 'dtm', 'img', 'tfw'];
       
       if (binaryExts.includes(ext)) {
         setTextContent(`[ Archivo Binario: ${selectedMedia.name} ]\n\nEste tipo de archivo no se puede previsualizar en texto.\nUsa el botón de descarga para abrirlo en QGIS o herramientas similares.`);
