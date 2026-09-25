@@ -29,32 +29,35 @@ app.add_middleware(
 )
 
 FUSION_CHEAT_SHEET = r"""
+ERES UN EXPERTO EN TOPOGRAFÍA Y FUSION-LTK.
+Tu objetivo es ayudar al usuario a procesar datos LiDAR. Puedes conversar en español, explicar tus pasos y sugerir flujos de trabajo.
+
 REGLAS ESTRICTAS DE SINTAXIS FUSION-LTK:
 - NO inventes archivos que no existan. Si el usuario no da nombre de archivo de entrada, usa el que haya: C:\FUSION\betera15.las
 - Los ejecutables están en C:\FUSION\
 - La sintaxis NO usa -i ni -o, usa argumentos posicionales según el manual oficial.
-- Responde ÚNICAMENTE con el comando en una línea. Nada de explicaciones ni comillas.
+
+CUANDO SUGIERAS UN COMANDO DE FUSION, DEBES ENVOLVERLO EN UN BLOQUE DE CÓDIGO BASH, ASÍ:
+```bash
+C:\FUSION\GroundFilter C:\FUSION\ground.las 1 C:\FUSION\betera15.las
+```
 
 HERRAMIENTAS Y SINTAXIS:
 1. GroundFilter
 Uso: Extraer puntos del terreno (bare-earth).
 Sintaxis: C:\FUSION\GroundFilter [switches] outputfile cellsize datafile
-Ejemplo: C:\FUSION\GroundFilter C:\FUSION\ground.las 1 C:\FUSION\betera15.las
 
 2. GridSurfaceCreate
 Uso: Crear Modelo Digital del Terreno (MDT/DTM).
 Sintaxis: C:\FUSION\GridSurfaceCreate [switches] surfacefile cellsize xyunits zunits coordsys zone horizdatum vertdatum datafile
-Ejemplo: C:\FUSION\GridSurfaceCreate C:\FUSION\terreno.dtm 1 M M 0 0 0 0 C:\FUSION\ground.las
 
 3. ClipData
 Uso: Recortar un bounding box rectangular.
 Sintaxis: C:\FUSION\ClipData [switches] InputSpecifier SampleFile MinX MinY MaxX MaxY
-Ejemplo: C:\FUSION\ClipData C:\FUSION\betera15.las C:\FUSION\recorte.las 720000 4382000 721000 4383000
 
 4. PolyClipData
 Uso: Recortar usando un shapefile poligonal de máscara.
 Sintaxis: C:\FUSION\PolyClipData [switches] PolyFile OutputFile InputDataFile
-Ejemplo: C:\FUSION\PolyClipData C:\FUSION\mascara.shp C:\FUSION\recorte_poly.las C:\FUSION\betera15.las
 
 Si el usuario pide algo genérico y no tienes los parámetros, usa parámetros lógicos estándar de topografía.
 """
@@ -69,13 +72,13 @@ async def get_file(filename: str):
 @app.post("/api/chat")
 async def chat_endpoint(text: str = Form(...), model: str = Form("openai/gpt-oss-120b")):
     prompt_text = text
-    sys_prompt = f"Eres un experto topógrafo. Lee esto: {FUSION_CHEAT_SHEET}\nDeduce el comando FUSION pedido. Responde SOLO con el comando crudo."
+    sys_prompt = FUSION_CHEAT_SHEET
     chat = client.chat.completions.create(
         messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": prompt_text}],
-        model=model, temperature=0,
+        model=model, temperature=0.3,
     )
-    cmd = chat.choices[0].message.content.strip().replace("`", "")
-    return {"transcription": prompt_text, "command": cmd}
+    reply = chat.choices[0].message.content.strip()
+    return {"transcription": prompt_text, "text": reply}
 
 @app.post("/api/execute")
 async def execute_command(command: str = Form(...)):

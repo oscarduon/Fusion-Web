@@ -167,6 +167,33 @@ export default function App() {
     updateCurrentProject({ chatHistory: [...chatHistory, { text, isUser }] });
   };
 
+
+  const executeCommand = async (cmd, targetProjectId) => {
+    setProjects(prev => prev.map(p => p.id === targetProjectId ? {
+      ...p,
+      ideLogs: `Ejecutando:\n${cmd}\n\nProcesando...`,
+      visorFiles: [{ status: 'loading' }]
+    } : p));
+
+    try {
+      const execData = new FormData();
+      execData.append('command', cmd);
+      const execRes = await fetch('/api/execute', { method: 'POST', body: execData });
+      const execResult = await execRes.json();
+
+      setProjects(prev => prev.map(p => p.id === targetProjectId ? {
+        ...p,
+        ideLogs: execResult.logs || 'Sin salida de consola.',
+        visorFiles: execResult.files || []
+      } : p));
+    } catch (e) {
+      setProjects(prev => prev.map(p => p.id === targetProjectId ? {
+        ...p,
+        ideLogs: `Error de red: ${e}`
+      } : p));
+    }
+  };
+
   const handleSend = async () => {
     if (!inputText.trim()) return;
     const txt = inputText.trim();
@@ -307,6 +334,44 @@ export default function App() {
     </div>
   );
 
+
+  const renderChatMessage = (msg, i) => {
+    if (msg.isUser) {
+      return (
+        <div key={i} className="max-w-[85%] p-4 rounded-2xl whitespace-pre-wrap shadow-sm text-[15px] leading-relaxed self-end bg-blue-600 text-white ml-auto">
+          {msg.text}
+        </div>
+      );
+    }
+    
+    // Parse markdown for code blocks
+    const parts = msg.text.split(/(```[\s\S]*?```)/g);
+    return (
+      <div key={i} className="max-w-[85%] p-4 rounded-2xl shadow-sm text-[15px] leading-relaxed self-start bg-neutral-900 border border-neutral-800 text-neutral-100 flex flex-col gap-3">
+        {msg.modelName && <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">{msg.modelName}</div>}
+        {parts.map((part, idx) => {
+          if (part.startsWith('```')) {
+            const code = part.replace(/```[a-z]*\n?/i, '').replace(/```$/, '').trim();
+            return (
+              <div key={idx} className="bg-black border border-neutral-700 rounded-xl overflow-hidden flex flex-col">
+                <div className="bg-neutral-800 px-3 py-1.5 flex justify-between items-center border-b border-neutral-700">
+                  <span className="text-xs font-mono text-neutral-400">Comando sugerido</span>
+                </div>
+                <pre className="p-3 text-xs font-mono text-green-400 overflow-x-auto whitespace-pre-wrap">{code}</pre>
+                <div className="p-2 border-t border-neutral-800 bg-neutral-950 flex justify-end">
+                  <button onClick={() => executeCommand(code, currentProjectId)} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-2 transition">
+                    <Play size={14} /> Ejecutar Comando
+                  </button>
+                </div>
+              </div>
+            );
+          }
+          return <span key={idx} className="whitespace-pre-wrap">{part}</span>;
+        })}
+      </div>
+    );
+  };
+
   const ChatContent = (
     <div className="flex flex-col h-full relative bg-neutral-950">
       
@@ -347,11 +412,7 @@ export default function App() {
             {!currentProjectId && <p className="text-sm">Envía un comando para empezar.</p>}
           </div>
         )}
-        {chatHistory.map((msg, i) => (
-          <div key={i} className={`max-w-[85%] p-4 rounded-2xl whitespace-pre-wrap shadow-sm text-[15px] leading-relaxed ${msg.isUser ? 'self-end bg-blue-600 text-white ml-auto' : 'self-start bg-neutral-900 border border-neutral-800 text-neutral-100'}`}>
-            {msg.text}
-          </div>
-        ))}
+        {chatHistory.map((msg, i) => renderChatMessage(msg, i))}
         <div ref={chatEndRef} className="h-4 shrink-0" />
       </div>
       
