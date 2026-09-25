@@ -271,13 +271,13 @@ export default function App() {
   });
 
   const ModelSelectorButton = ({ mobile = false }) => (
-    <div className={`relative ${mobile ? 'flex justify-center flex-1' : 'self-start ml-2'}`}>
+    <div className={`relative ${mobile ? 'flex justify-center flex-1' : ''}`} onClick={(e) => e.stopPropagation()}>
       <button onClick={() => setIsModelSelectorOpen(!isModelSelectorOpen)} className={`flex items-center gap-2 bg-transparent hover:bg-neutral-800/50 px-3 py-1.5 rounded-xl text-sm font-medium transition ${mobile ? 'text-neutral-200' : 'text-neutral-300 border border-neutral-800 bg-neutral-900/80 backdrop-blur-md shadow-sm'}`}>
         {selectedModel.name} <ChevronDown size={14} className="text-neutral-500"/>
       </button>
       
       {isModelSelectorOpen && (
-        <div className={`absolute ${mobile ? 'top-full mt-2 left-1/2 -translate-x-1/2' : 'bottom-full mb-2 left-0'} w-64 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl overflow-hidden z-[60]`}>
+        <div className={`absolute top-full mt-2 ${mobile ? 'left-1/2 -translate-x-1/2' : 'right-0'} w-64 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl overflow-hidden z-[60]`}>
           <div className="py-2 max-h-80 overflow-y-auto hide-scrollbar">
             {MODEL_CATEGORIES.map((cat, i) => (
               <div key={i}>
@@ -310,12 +310,19 @@ export default function App() {
   const ChatContent = (
     <div className="flex flex-col h-full relative bg-neutral-950">
       
-      {/* DESKTOP HEADER (Only Hamburger) */}
-      {!sidebarOpen && (
-        <button onClick={() => setSidebarOpen(true)} className="absolute top-4 left-4 z-20 p-2 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-full transition hidden md:block">
-          <Menu size={24} />
-        </button>
-      )}
+      {/* DESKTOP HEADER */}
+      <header className="hidden md:flex absolute top-0 left-0 right-0 p-4 justify-between items-center z-20 pointer-events-none">
+        <div className="pointer-events-auto flex items-center gap-2">
+          {!sidebarOpen && (
+            <button onClick={() => setSidebarOpen(true)} className="p-2 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-full transition">
+              <Menu size={24} />
+            </button>
+          )}
+        </div>
+        <div className="pointer-events-auto">
+          <ModelSelectorButton />
+        </div>
+      </header>
 
       {/* NATIVE MOBILE HEADER */}
       <header className="md:hidden w-full p-3 flex items-center justify-between shrink-0 bg-neutral-950 z-20 border-b border-neutral-900">
@@ -328,7 +335,7 @@ export default function App() {
         <div className="w-10"></div> {/* Spacer */}
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-32 space-y-6 hide-scrollbar flex flex-col min-h-0 pt-4">
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-32 space-y-6 hide-scrollbar flex flex-col min-h-0 pt-16 md:pt-20">
         {chatHistory.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-neutral-500 space-y-6">
             <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-2xl opacity-80">
@@ -351,12 +358,7 @@ export default function App() {
       <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-neutral-950 via-neutral-950 to-transparent pt-12 flex justify-center">
         
         <div className="w-full max-w-3xl flex flex-col gap-2 relative z-10">
-          
-          <div className="hidden md:block">
-            <ModelSelectorButton />
-          </div>
-
-          <div className="flex items-end bg-[#1e1e1f] p-2 rounded-[32px] shadow-2xl focus-within:bg-[#252526] transition-all">
+          <div className="flex items-end bg-[#1e1e1f] p-2 rounded-[32px] shadow-2xl focus-within:bg-[#252526] transition-all border border-neutral-800">
             <button className="p-3 text-neutral-400 hover:text-white rounded-full transition-colors shrink-0">
               <Plus size={20} />
             </button>
@@ -496,7 +498,7 @@ export default function App() {
   );
 
   return (
-    <div className="flex flex-col h-[100dvh] w-full bg-neutral-950 font-sans text-neutral-50 overflow-hidden relative">
+    <div className="absolute inset-0 flex flex-col w-full bg-neutral-950 font-sans text-neutral-50 overflow-hidden">
       
       {/* LIGHTBOX MODAL */}
       {selectedMedia && (
