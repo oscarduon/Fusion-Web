@@ -88,7 +88,7 @@ if os.path.exists(fusion_db_path):
         FUSION_DB = json.load(f)
 
 @app.post("/api/chat")
-async def chat_endpoint(text: str = Form(...), model: str = Form("llama-3.1-70b-versatile")):
+async def chat_endpoint(text: str = Form(...), model: str = Form("llama3-70b-8192")):
     prompt_text = text
     
     # 1. THE LIBRARIAN AGENT (Router)
@@ -106,7 +106,7 @@ async def chat_endpoint(text: str = Form(...), model: str = Form("llama-3.1-70b-
                 {"role": "system", "content": router_sys},
                 {"role": "user", "content": prompt_text}
             ],
-            model="llama-3.1-70b-versatile", 
+            model="llama3-70b-8192", 
             temperature=0.0
         )
         commands_needed_str = router_chat.choices[0].message.content.strip()
@@ -151,7 +151,7 @@ async def chat_endpoint(text: str = Form(...), model: str = Form("llama-3.1-70b-
         
     chat = client.chat.completions.create(
         messages=[{"role": "system", "content": dynamic_sys_prompt}, {"role": "user", "content": prompt_text}],
-        model="llama-3.1-70b-versatile", 
+        model="llama3-70b-8192", 
         temperature=0.3,
     )
     reply = chat.choices[0].message.content.strip()
