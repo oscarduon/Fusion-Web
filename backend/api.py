@@ -15,6 +15,12 @@ client = Groq(api_key=os.getenv('GROQ_API_KEY'))
 
 app = FastAPI()
 
+import os
+fusion_dir = os.path.expanduser('~/.wine/drive_c/FUSION/')
+potree_dir = os.path.join(fusion_dir, 'potree')
+os.makedirs(potree_dir, exist_ok=True)
+app.mount('/potree', StaticFiles(directory=potree_dir), name='potree')
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
