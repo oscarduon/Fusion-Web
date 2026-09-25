@@ -14,8 +14,8 @@ const MODEL_CATEGORIES = [
   {
     category: "Modelos Privados",
     models: [
-      { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (PrÃ³ximamente)', disabled: true },
-      { id: 'grok-beta', name: 'Grok 2 (PrÃ³ximamente)', disabled: true }
+      { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Próximamente)', disabled: true },
+      { id: 'grok-beta', name: 'Grok 2 (Próximamente)', disabled: true }
     ]
   }
 ];
@@ -77,7 +77,7 @@ export default function App() {
       setIsRecording(true);
     } catch (err) {
       console.error("Error accessing mic:", err);
-      alert("No se pudo acceder al micrÃ³fono. Da permisos en Firefox.");
+      alert("No se pudo acceder al micrófono. Da permisos en Firefox.");
     }
   };
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -92,7 +92,7 @@ export default function App() {
     if (legacyChat && legacyChat.length > 0) {
       return [{
         id: generateId(),
-        name: 'SesiÃ³n anterior',
+        name: 'Sesión anterior',
         isPinned: false,
         updatedAt: Date.now(),
         chatHistory: legacyChat,
@@ -449,9 +449,9 @@ export default function App() {
               <Map size={32} />
             </div>
             <h2 className="text-2xl font-semibold text-neutral-300 text-center max-w-sm leading-tight">
-              {currentProjectId ? currentProject.name : 'Ahora tÃº, Asgeirr'}
+              {currentProjectId ? currentProject.name : 'Ahora tú, Asgeirr'}
             </h2>
-            {!currentProjectId && <p className="text-sm">EnvÃ­a un comando para empezar.</p>}
+            {!currentProjectId && <p className="text-sm">Envía un comando para empezar.</p>}
           </div>
         )}
         {chatHistory.map((msg, i) => renderChatMessage(msg, i))}
@@ -474,7 +474,7 @@ export default function App() {
             />
             <button onClick={toggleRecording} className={`p-3 rounded-full shadow-md transition-transform active:scale-95 shrink-0 ml-2 ${isRecording ? 'bg-red-500 hover:bg-red-600 animate-pulse text-white' : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-400'}`} title="Dictar por voz">{isRecording ? <MicOff size={18} /> : <Mic size={18} />}</button><button onClick={handleSend} className="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-md transition-transform active:scale-95 shrink-0 ml-2"><Send size={18} /></button>
           </div>
-          <p className="text-center text-[10px] text-neutral-600 mt-2 hidden md:block">La IA puede cometer errores topogrÃ¡ficos. Verifica los datos generados.</p>
+          <p className="text-center text-[10px] text-neutral-600 mt-2 hidden md:block">La IA puede cometer errores topográficos. Verifica los datos generados.</p>
         </div>
       </div>
     </div>
@@ -700,7 +700,7 @@ export default function App() {
         
         <div className="px-4 mt-2">
           <button onClick={handleNewSession} className="w-full bg-[#1e1e1f] hover:bg-[#282a2c] text-neutral-200 rounded-full px-4 py-3.5 text-sm font-medium transition flex items-center gap-3">
-            <Plus size={18} /> Nueva conversaciÃ³n
+            <Plus size={18} /> Nueva conversación
           </button>
         </div>
 
@@ -728,7 +728,7 @@ export default function App() {
           
           <div className="px-3 mt-4">
             <button onClick={handleNewSession} className="bg-[#1e1e1f] hover:bg-[#282a2c] text-neutral-200 rounded-full px-4 py-3 text-sm font-medium transition flex items-center gap-3">
-              <Plus size={18} /> Nueva sesiÃ³n
+              <Plus size={18} /> Nueva sesión
             </button>
           </div>
 
