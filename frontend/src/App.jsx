@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, Terminal, MessageSquare, Send, X, HardDrive, FileText, Download, Play, ChevronUp, ChevronDown, Check, AlertTriangle, Plus, History, Settings, Map, MoreVertical, Edit2, Trash2, Pin, PinOff } from 'lucide-react';
+import { Menu, Terminal, MessageSquare, Send, X, HardDrive, FileText, Download, Play, ChevronUp, ChevronDown, Check, AlertTriangle, Plus, History, Settings, Map, MoreVertical, Edit2, Trash2, Pin, PinOff, Mic, MicOff } from 'lucide-react';
 
 const MODEL_CATEGORIES = [
   {
