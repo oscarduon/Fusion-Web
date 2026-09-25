@@ -464,9 +464,7 @@ export default function App() {
               placeholder="Pregunta a LiDAR..." 
               className="flex-1 bg-transparent px-2 py-3.5 text-[15px] text-white focus:outline-none placeholder-neutral-500"
             />
-            <button onClick={handleSend} className="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-md transition-transform active:scale-95 shrink-0 ml-2">
-              <Send size={18} />
-            </button>
+            <button onClick={toggleRecording} className={`p-3 rounded-full shadow-md transition-transform active:scale-95 shrink-0 ml-2 ${isRecording ? 'bg-red-500 hover:bg-red-600 animate-pulse text-white' : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-400'}`} title="Dictar por voz">{isRecording ? <MicOff size={18} /> : <Mic size={18} />}</button><button onClick={handleSend} className="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-md transition-transform active:scale-95 shrink-0 ml-2"><Send size={18} /></button>
           </div>
           <p className="text-center text-[10px] text-neutral-600 mt-2 hidden md:block">La IA puede cometer errores topográficos. Verifica los datos generados.</p>
         </div>
@@ -784,4 +782,5 @@ export default function App() {
     </div>
   );
 }
+
 
