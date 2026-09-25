@@ -16,7 +16,14 @@ client = Groq(api_key=os.getenv('GROQ_API_KEY'))
 app = FastAPI()
 
 import os
-fusion_dir = os.path.expanduser('~/.wine/drive_c/FUSION/')
+import platform
+is_windows = platform.system() == "Windows"
+
+if is_windows:
+    fusion_dir = r"C:\FUSION"
+else:
+    fusion_dir = os.path.expanduser('~/.wine/drive_c/FUSION/')
+
 potree_dir = os.path.join(fusion_dir, 'potree')
 os.makedirs(potree_dir, exist_ok=True)
 app.mount('/potree', StaticFiles(directory=potree_dir), name='potree')
@@ -64,7 +71,7 @@ Si el usuario pide algo genérico y no tienes los parámetros, usa parámetros l
 
 @app.get("/files/{filename}")
 async def get_file(filename: str):
-    path = os.path.expanduser(f"~/.wine/drive_c/FUSION/{filename}")
+    path = os.path.join(fusion_dir, filename)
     if os.path.exists(path):
         return FileResponse(path)
     return {"error": "File not found"}
@@ -110,7 +117,7 @@ async def execute_command(command: str = Form(...)):
     
     # Save the command to a bat file to handle multi-line and quotes correctly
     bat_filename = "temp_exec.bat"
-    bat_path = os.path.expanduser(f"~/.wine/drive_c/FUSION/{bat_filename}")
+    bat_path = os.path.join(fusion_dir, bat_filename)
     
     # Ensure Windows CRLF line endings for the bat file
     win_command = command.strip().replace('\r', '').replace('\n', '\r\n')
@@ -118,7 +125,11 @@ async def execute_command(command: str = Form(...)):
     with open(bat_path, "w") as f:
         f.write(win_command)
         
-    full_cmd = f'cd ~/.wine/drive_c/FUSION && xvfb-run -a wine cmd /c {bat_filename}'
+    if is_windows:
+        full_cmd = f'cd /d "{fusion_dir}" && {bat_filename}'
+    else:
+        full_cmd = f'cd {fusion_dir} && xvfb-run -a wine cmd /c {bat_filename}'
+        
     start_time = time.time()
     try:
         result = subprocess.run(full_cmd, shell=True, capture_output=True, text=True, check=True)
@@ -126,7 +137,7 @@ async def execute_command(command: str = Form(...)):
         return {"status": "error", "logs": e.stdout + "\n" + e.stderr}
     
     new_files = []
-    base_dir = os.path.expanduser("~/.wine/drive_c/FUSION/")
+    base_dir = fusion_dir
     for f in glob.glob(os.path.join(base_dir, "*")):
         if os.path.isfile(f) and os.path.getmtime(f) > start_time - 2:
             filename = os.path.basename(f)
@@ -138,7 +149,10 @@ async def execute_command(command: str = Form(...)):
             if ext in ["las", "laz"]:
                 out_jpg = f + ".jpg"
                 # 1. Gen 2D Thumbnail
-                subprocess.run(f"/home/oscar/fusion_web/venv/bin/python3 /home/oscar/fusion_web/backend/las_preview.py '{f}' '{out_jpg}'", shell=True)
+                if is_windows:
+                    subprocess.run(f'python backend/las_preview.py "{f}" "{out_jpg}"', shell=True)
+                else:
+                    subprocess.run(f"/home/oscar/fusion_web/venv/bin/python3 /home/oscar/fusion_web/backend/las_preview.py '{f}' '{out_jpg}'", shell=True)
                 if os.path.exists(out_jpg):
                     with open(out_jpg, "rb") as img_f:
                         file_info["preview_b64"] = base64.b64encode(img_f.read()).decode('utf-8')
@@ -149,7 +163,8 @@ async def execute_command(command: str = Form(...)):
                 if not os.path.exists(os.path.join(potree_out, "index.html")):
                     # Trigger PotreeConverter in background so it doesn't block
                     # For windows dev fallback it will just fail silently
-                    subprocess.Popen(f"/home/oscar/PotreeConverter_2.1.2_x64_linux/PotreeConverter '{f}' -o '{potree_out}' --generate-page index", shell=True)
+                    if not is_windows:
+                        subprocess.Popen(f"/home/oscar/PotreeConverter_2.1.2_x64_linux/PotreeConverter '{f}' -o '{potree_out}' --generate-page index", shell=True)
                 
                 # We assume it will exist soon or already exists
                 file_info["html_3d_url"] = f"/potree/{filename}/index.html"
