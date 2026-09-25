@@ -80,6 +80,30 @@ async def chat_endpoint(text: str = Form(...), model: str = Form("openai/gpt-oss
     reply = chat.choices[0].message.content.strip()
     return {"transcription": prompt_text, "text": reply}
 
+@app.post("/api/transcribe")
+async def transcribe_audio(audio: UploadFile = File(...)):
+    try:
+        # Save temp file
+        temp_path = f"/tmp/{audio.filename}"
+        with open(temp_path, "wb") as buffer:
+            buffer.write(await audio.read())
+        
+        # Transcribe with Groq Whisper
+        with open(temp_path, "rb") as file:
+            transcription = client.audio.transcriptions.create(
+                file=(audio.filename, file.read()),
+                model="whisper-large-v3",
+                prompt="El usuario está hablando sobre LiDAR y topografía en español.",
+                response_format="json",
+                language="es",
+                temperature=0.0
+            )
+        
+        os.remove(temp_path)
+        return {"text": transcription.text}
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.post("/api/execute")
 async def execute_command(command: str = Form(...)):
     full_cmd = f'cd ~/.wine/drive_c/FUSION && xvfb-run wine cmd /c "{command}"'

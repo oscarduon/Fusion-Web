@@ -25,37 +25,59 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 export default function App() {
   const [activeTab, setActiveTab] = useState('chat');
   const [isRecording, setIsRecording] = useState(false);
-  const recognitionRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
 
-  useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = 'es-ES';
-
-      recognition.onstart = () => setIsRecording(true);
-      recognition.onend = () => setIsRecording(false);
-      recognition.onerror = (e) => {
-        console.error("Mic error:", e.error);
-        setIsRecording(false);
-      };
-      recognition.onresult = (e) => {
-        const transcript = e.results[0][0].transcript;
-        setInputText(prev => prev + (prev ? ' ' : '') + transcript);
-      };
-
-      recognitionRef.current = recognition;
-    }
-  }, []);
-
-  const toggleRecording = () => {
-    if (!recognitionRef.current) return alert("Tu navegador no soporta reconocimiento de voz nativo (usa Chrome o Edge).");
+  const toggleRecording = async () => {
     if (isRecording) {
-      recognitionRef.current.stop();
-    } else {
-      recognitionRef.current.start();
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+      setIsRecording(false);
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'voice.webm');
+        
+        // Indicate loading somehow? We just change input text to ...
+        const originalText = inputText;
+        setInputText(prev => prev + (prev ? ' ' : '') + '...');
+        
+        try {
+          const res = await fetch('/api/transcribe', { method: 'POST', body: formData });
+          const data = await res.json();
+          if (data.text) {
+            setInputText(originalText + (originalText ? ' ' : '') + data.text);
+          } else {
+            setInputText(originalText);
+            console.error(data.error);
+          }
+        } catch (e) {
+          setInputText(originalText);
+          console.error(e);
+        }
+        
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Error accessing mic:", err);
+      alert("No se pudo acceder al micrófono. Da permisos en Firefox.");
     }
   };
   const [sidebarOpen, setSidebarOpen] = useState(false);
