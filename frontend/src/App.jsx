@@ -153,6 +153,14 @@ export default function App() {
   // Fetch text content for CSV/TXT/LOG files so they don't prompt downloads in iframes
   useEffect(() => {
     if (selectedMedia && !selectedMedia.preview_b64 && selectedMedia.type !== 'html') {
+      const ext = (selectedMedia.type || '').toLowerCase();
+      const binaryExts = ['tif', 'tiff', 'las', 'laz', 'shp', 'shx', 'dbf', 'prj', 'exe', 'dll'];
+      
+      if (binaryExts.includes(ext)) {
+        setTextContent(`[ Archivo Binario: ${selectedMedia.name} ]\n\nEste tipo de archivo no se puede previsualizar en texto.\nUsa el botón de descarga para abrirlo en QGIS o herramientas similares.`);
+        return;
+      }
+
       setTextContent('Cargando datos del archivo...');
       fetch(selectedMedia.url)
         .then(res => {
