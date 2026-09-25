@@ -223,12 +223,14 @@ async def execute_command(command: str = Form(...)):
             if ext == "dtm":
                 out_tif = f + ".tif"
                 out_jpg = f + ".jpg"
+                base_name = os.path.basename(f)
+                base_tif = base_name + ".tif"
                 if is_windows:
-                    subprocess.run(f'C:\\FUSION\\DTM2TIF.exe "{f}" "{out_tif}"', shell=True)
+                    subprocess.run(f'C:\\FUSION\\DTM2TIF.exe "{base_name}" "{base_tif}"', shell=True, cwd=fusion_dir)
                     if os.path.exists(out_tif):
                         subprocess.run(f'python backend/tif_preview.py "{out_tif}" "{out_jpg}"', shell=True)
                 else:
-                    subprocess.run(f"xvfb-run -a wine ~/.wine/drive_c/FUSION/DTM2TIF.exe '{f}' '{out_tif}'", shell=True)
+                    subprocess.run(f"xvfb-run -a wine DTM2TIF.exe '{base_name}' '{base_tif}'", shell=True, cwd=fusion_dir)
                     if os.path.exists(out_tif):
                         subprocess.run(f"/home/oscar/fusion_web/venv/bin/python3 /home/oscar/fusion_web/backend/tif_preview.py '{out_tif}' '{out_jpg}'", shell=True)
                 if os.path.exists(out_jpg):
