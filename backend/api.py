@@ -201,4 +201,5 @@ async def github_webhook():
     subprocess.Popen(["bash", "/home/oscar/fusion_web/backend/deploy.sh"])
     return {"status": "deploying"}
 
-app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="static")
+if os.path.exists("frontend/dist"):
+    app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="static")
