@@ -401,10 +401,8 @@ export default function App() {
                 </span>
                 
                   <button onClick={() => setSelectedMedia(file)} className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition shadow-sm bg-neutral-700 hover:bg-neutral-600 text-white`}>
-                    Abrir Visor
-                  </button>
-                )}
-              </div>
+                    Abrir Visor</button>
+                </div>
               {(file.type === 'las' || file.type === 'laz') && file.preview_b64 && (
                 <div 
                   onClick={() => setSelectedMedia(file)}
@@ -708,3 +706,4 @@ export default function App() {
     </div>
   );
 }
+
