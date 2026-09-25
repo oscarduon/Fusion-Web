@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { Menu, Terminal, MessageSquare, Send, X, HardDrive, FileText, Download, Play, ChevronUp, ChevronDown, Check, AlertTriangle, Plus, History, Settings, Map, MoreVertical, Edit2, Trash2, Pin, PinOff, Mic, MicOff } from 'lucide-react';
 
 const MODEL_CATEGORIES = [
@@ -14,8 +14,8 @@ const MODEL_CATEGORIES = [
   {
     category: "Modelos Privados",
     models: [
-      { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Próximamente)', disabled: true },
-      { id: 'grok-beta', name: 'Grok 2 (Próximamente)', disabled: true }
+      { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (PrÃƒÂ³ximamente)', disabled: true },
+      { id: 'grok-beta', name: 'Grok 2 (PrÃƒÂ³ximamente)', disabled: true }
     ]
   }
 ];
@@ -77,7 +77,7 @@ export default function App() {
       setIsRecording(true);
     } catch (err) {
       console.error("Error accessing mic:", err);
-      alert("No se pudo acceder al micrófono. Da permisos en Firefox.");
+      alert("No se pudo acceder al micrÃƒÂ³fono. Da permisos en Firefox.");
     }
   };
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -92,7 +92,7 @@ export default function App() {
     if (legacyChat && legacyChat.length > 0) {
       return [{
         id: generateId(),
-        name: 'Sesión anterior',
+        name: 'SesiÃƒÂ³n anterior',
         isPinned: false,
         updatedAt: Date.now(),
         chatHistory: legacyChat,
@@ -283,57 +283,19 @@ export default function App() {
       formData.append('model', selectedModel.id);
       const chatRes = await fetch('/api/chat', { method: 'POST', body: formData });
       const chatData = await chatRes.json();
-      const cmd = chatData.command;
+      const aiText = chatData.text || chatData.command || "Error: No se recibiÃ³ respuesta del agente.";
       
       setProjects(prev => prev.map(p => p.id === targetProjectId ? {
         ...p, 
-        chatHistory: [...p.chatHistory, { text: `Comando detectado (${selectedModel.name}):\n${cmd}`, isUser: false }],
-        ideLogs: `Ejecutando:\n${cmd}\n\nProcesando...`,
-        visorFiles: [{ status: 'loading' }]
-      } : p));
-
-      const execData = new FormData();
-      execData.append('command', cmd);
-      const execRes = await fetch('/api/execute', { method: 'POST', body: execData });
-      const execResult = await execRes.json();
-
-      setProjects(prev => prev.map(p => p.id === targetProjectId ? {
-        ...p, 
-        chatHistory: [...p.chatHistory, { text: '✅ Proceso finalizado. Revisa la consola y el visor.', isUser: false }],
-        ideLogs: execResult.logs || 'Sin salida de consola.',
-        visorFiles: execResult.files || []
+        chatHistory: [...p.chatHistory, { text: aiText, isUser: false, modelName: selectedModel.name }]
       } : p));
       
     } catch (e) {
       setProjects(prev => prev.map(p => p.id === targetProjectId ? {
-        ...p, chatHistory: [...p.chatHistory, { text: `Error: ${e}`, isUser: false }]
+        ...p, chatHistory: [...p.chatHistory, { text: `Error de conexiÃ³n con la IA: ${e}`, isUser: false }]
       } : p));
     }
   };
-
-  const handleUpload = async () => {
-    updateCurrentProject({ ideLogs: ideLogs + '\n\nSubiendo a Google Drive...' });
-    try {
-      const res = await fetch('/api/upload', { method: 'POST' });
-      const data = await res.json();
-      updateCurrentProject({ ideLogs: ideLogs + (data.status === 'success' ? '\n✅ ¡Subida completada!' : '\n❌ Error al subir.') });
-    } catch (e) {
-      updateCurrentProject({ ideLogs: ideLogs + '\n❌ Error de red.' });
-    }
-  };
-
-  const [chatWidth, setChatWidth] = useState(600);
-  const isDragging = useRef(false);
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!isDragging.current) return;
-      const startX = (window.innerWidth >= 768 && sidebarOpen) ? 260 : 0;
-      const newWidth = e.clientX - startX;
-      if (newWidth > 300 && newWidth < window.innerWidth - 300) {
-        setChatWidth(newWidth);
-      }
-    };
     const handleMouseUp = () => {
       if (isDragging.current) {
         isDragging.current = false;
@@ -463,9 +425,9 @@ export default function App() {
               <Map size={32} />
             </div>
             <h2 className="text-2xl font-semibold text-neutral-300 text-center max-w-sm leading-tight">
-              {currentProjectId ? currentProject.name : 'Ahora tú, Asgeirr'}
+              {currentProjectId ? currentProject.name : 'Ahora tÃƒÂº, Asgeirr'}
             </h2>
-            {!currentProjectId && <p className="text-sm">Envía un comando para empezar.</p>}
+            {!currentProjectId && <p className="text-sm">EnvÃƒÂ­a un comando para empezar.</p>}
           </div>
         )}
         {chatHistory.map((msg, i) => renderChatMessage(msg, i))}
@@ -488,7 +450,7 @@ export default function App() {
             />
             <button onClick={toggleRecording} className={`p-3 rounded-full shadow-md transition-transform active:scale-95 shrink-0 ml-2 ${isRecording ? 'bg-red-500 hover:bg-red-600 animate-pulse text-white' : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-400'}`} title="Dictar por voz">{isRecording ? <MicOff size={18} /> : <Mic size={18} />}</button><button onClick={handleSend} className="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-md transition-transform active:scale-95 shrink-0 ml-2"><Send size={18} /></button>
           </div>
-          <p className="text-center text-[10px] text-neutral-600 mt-2 hidden md:block">La IA puede cometer errores topográficos. Verifica los datos generados.</p>
+          <p className="text-center text-[10px] text-neutral-600 mt-2 hidden md:block">La IA puede cometer errores topogrÃƒÂ¡ficos. Verifica los datos generados.</p>
         </div>
       </div>
     </div>
@@ -714,7 +676,7 @@ export default function App() {
         
         <div className="px-4 mt-2">
           <button onClick={handleNewSession} className="w-full bg-[#1e1e1f] hover:bg-[#282a2c] text-neutral-200 rounded-full px-4 py-3.5 text-sm font-medium transition flex items-center gap-3">
-            <Plus size={18} /> Nueva conversación
+            <Plus size={18} /> Nueva conversaciÃƒÂ³n
           </button>
         </div>
 
@@ -742,7 +704,7 @@ export default function App() {
           
           <div className="px-3 mt-4">
             <button onClick={handleNewSession} className="bg-[#1e1e1f] hover:bg-[#282a2c] text-neutral-200 rounded-full px-4 py-3 text-sm font-medium transition flex items-center gap-3">
-              <Plus size={18} /> Nueva sesión
+              <Plus size={18} /> Nueva sesiÃƒÂ³n
             </button>
           </div>
 
@@ -758,7 +720,7 @@ export default function App() {
           </div>
 
           <div className="p-4 flex flex-col gap-1 border-t border-neutral-800/50">
-            <button onClick={() => { if(confirm('¿Borrar todo de este navegador?')) { localStorage.clear(); window.location.reload(); } }} className="text-left text-sm text-neutral-400 hover:bg-neutral-800 px-3 py-2.5 rounded-xl transition flex items-center gap-3">
+            <button onClick={() => { if(confirm('Ã‚Â¿Borrar todo de este navegador?')) { localStorage.clear(); window.location.reload(); } }} className="text-left text-sm text-neutral-400 hover:bg-neutral-800 px-3 py-2.5 rounded-xl transition flex items-center gap-3">
               <History size={16} /> Borrar Todo
             </button>
           </div>
@@ -804,5 +766,7 @@ export default function App() {
     </div>
   );
 }
+
+
 
 
