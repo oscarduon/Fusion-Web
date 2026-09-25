@@ -108,3 +108,18 @@ Desde `frontend/`:
 - `npm run dev` → desarrollo con Vite.
 - `npm run build` → build de producción.
 - `npm run preview` → previsualizar build.
+## Arquitectura 2.0 (Consultor + Potree)
+
+### 1) Motor 3D - Potree
+Las visualizaciones 3D en HTML (Plotly) se sustituyeron por **Potree** para poder manejar nubes de puntos enormes (ej. 3 a 100 millones de puntos) sin colapsar el navegador.
+- El servidor Ubuntu tiene instalado PotreeConverter (versión binaria).
+- En pi.py, cada vez que se genera un archivo .las válido, se ejecuta:
+  PotreeConverter archivo.las -o carpeta_potree --generate-page index
+- La web carga el Octree altamente comprimido y optimizado dentro de un iframe en App.jsx, permitiendo medir, recortar y analizar con herramientas nativas profesionales.
+
+### 2) Modo Consultor (Chat conversacional)
+En lugar de auto-ejecutar scripts a ciegas:
+- El System Prompt (Chuleta) de Groq está configurado como un experto en LiDAR y FUSION.
+- La IA puede charlar con el usuario, darle contexto y planificar comandos.
+- Si la IA sugiere ejecutar algo, lo envuelve en un bloque Markdown.
+- El frontend React (App.jsx) lee los bloques de código y pinta un botón de **[ ▶ Ejecutar Comando ]**. De esta manera el usuario tiene la última palabra.
