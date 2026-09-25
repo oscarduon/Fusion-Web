@@ -106,7 +106,19 @@ async def transcribe_audio(audio: UploadFile = File(...)):
 
 @app.post("/api/execute")
 async def execute_command(command: str = Form(...)):
-    full_cmd = f'cd ~/.wine/drive_c/FUSION && xvfb-run wine cmd /c "{command}"'
+    import tempfile
+    
+    # Save the command to a bat file to handle multi-line and quotes correctly
+    bat_filename = "temp_exec.bat"
+    bat_path = os.path.expanduser(f"~/.wine/drive_c/FUSION/{bat_filename}")
+    
+    # Ensure Windows CRLF line endings for the bat file
+    win_command = command.strip().replace('\r', '').replace('\n', '\r\n')
+    
+    with open(bat_path, "w") as f:
+        f.write(win_command)
+        
+    full_cmd = f'cd ~/.wine/drive_c/FUSION && xvfb-run -a wine cmd /c {bat_filename}'
     start_time = time.time()
     try:
         result = subprocess.run(full_cmd, shell=True, capture_output=True, text=True, check=True)

@@ -226,11 +226,13 @@ export default function App() {
 
 
   const executeCommand = async (cmd, targetProjectId) => {
-    setProjects(prev => prev.map(p => p.id === targetProjectId ? {
-      ...p,
-      ideLogs: `Ejecutando:\n${cmd}\n\nProcesando...`,
-      visorFiles: [{ status: 'loading' }]
-    } : p));
+    setProjects(prev => prev.map(p => {
+      if (p.id === targetProjectId) {
+        const newLogs = (p.ideLogs + `\n\n--- Ejecutando ---\n${cmd}\nProcesando...`).split('\n').slice(-100).join('\n');
+        return { ...p, ideLogs: newLogs, visorFiles: [{ status: 'loading' }] };
+      }
+      return p;
+    }));
 
     try {
       const execData = new FormData();
@@ -238,16 +240,22 @@ export default function App() {
       const execRes = await fetch('/api/execute', { method: 'POST', body: execData });
       const execResult = await execRes.json();
 
-      setProjects(prev => prev.map(p => p.id === targetProjectId ? {
-        ...p,
-        ideLogs: execResult.logs || 'Sin salida de consola.',
-        visorFiles: execResult.files || []
-      } : p));
+      setProjects(prev => prev.map(p => {
+        if (p.id === targetProjectId) {
+          const resultLogs = execResult.logs || 'Sin salida de consola.';
+          const newLogs = (p.ideLogs + `\n` + resultLogs).split('\n').slice(-100).join('\n');
+          return { ...p, ideLogs: newLogs, visorFiles: execResult.files || [] };
+        }
+        return p;
+      }));
     } catch (e) {
-      setProjects(prev => prev.map(p => p.id === targetProjectId ? {
-        ...p,
-        ideLogs: `Error de red: ${e}`
-      } : p));
+      setProjects(prev => prev.map(p => {
+        if (p.id === targetProjectId) {
+          const newLogs = (p.ideLogs + `\nError de red: ${e}`).split('\n').slice(-100).join('\n');
+          return { ...p, ideLogs: newLogs };
+        }
+        return p;
+      }));
     }
   };
 
