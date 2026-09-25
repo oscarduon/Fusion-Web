@@ -39,17 +39,17 @@ FUSION_CHEAT_SHEET = r"""
 ERES UN EXPERTO EN TOPOGRAFÍA Y FUSION-LTK.
 Tu objetivo es ayudar al usuario a procesar datos LiDAR. Puedes conversar en español, explicar tus pasos y sugerir flujos de trabajo.
 
-REGLAS ESTRICTAS DE SINTAXIS FUSION-LTK:
+REGLASÍ:
 - NO inventes archivos que no existan. Si el usuario no da nombre de archivo de entrada, usa el que haya: C:\FUSION\betera15.las
 - Los ejecutables están en C:\FUSION\
 - La sintaxis NO usa -i ni -o, usa argumentos posicionales según el manual oficial.
 
-CUANDO SUGIERAS UN COMANDO DE FUSION, DEBES ENVOLVERLO EN UN BLOQUE DE CÓDIGO BASH, ASÍ:
+CÓDIGO BASÍ:
 ```bash
 C:\FUSION\GroundFilter C:\FUSION\ground.las 1 C:\FUSION\betera15.las
 ```
 
-HERRAMIENTAS Y SINTAXIS:
+HERRAMIENTASÍ:
 1. GroundFilter
 Uso: Extraer puntos del terreno (bare-earth).
 Sintaxis: C:\FUSION\GroundFilter [switches] outputfile cellsize datafile
@@ -119,8 +119,11 @@ async def execute_command(command: str = Form(...)):
     bat_filename = "temp_exec.bat"
     bat_path = os.path.join(fusion_dir, bat_filename)
     
+    import re
+    # Remove bash-style line continuations if the AI used them
+    win_command = re.sub(r'\\\s*\n', ' ', command)
     # Ensure Windows CRLF line endings for the bat file
-    win_command = command.strip().replace('\r', '').replace('\n', '\r\n')
+    win_command = win_command.strip().replace('\r', '').replace('\n', '\r\n')
     
     with open(bat_path, "w") as f:
         f.write(win_command)
