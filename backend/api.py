@@ -22,7 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-FUSION_CHEAT_SHEET = """
+FUSION_CHEAT_SHEET = r"""
 REGLAS ESTRICTAS DE SINTAXIS FUSION-LTK:
 - NO inventes archivos que no existan. Si el usuario no da nombre de archivo de entrada, usa el que haya: C:\FUSION\betera15.las
 - Los ejecutables están en C:\FUSION\
