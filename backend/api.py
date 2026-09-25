@@ -90,4 +90,10 @@ async def upload_drive():
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@app.post("/api/webhook")
+async def github_webhook():
+    # Run the deploy script in the background
+    subprocess.Popen(["bash", "/home/oscar/fusion_web/backend/deploy.sh"])
+    return {"status": "deploying"}
+
 app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="static")
