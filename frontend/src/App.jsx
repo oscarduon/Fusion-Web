@@ -335,7 +335,7 @@ export default function App() {
         <div className="w-10"></div> {/* Spacer */}
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-32 space-y-6 hide-scrollbar flex flex-col min-h-0 pt-16 md:pt-20">
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 hide-scrollbar flex flex-col min-h-0 pt-16 md:pt-20">
         {chatHistory.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-neutral-500 space-y-6">
             <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-2xl opacity-80">
@@ -352,12 +352,11 @@ export default function App() {
             {msg.text}
           </div>
         ))}
-        <div ref={chatEndRef} />
+        <div ref={chatEndRef} className="h-4 shrink-0" />
       </div>
       
-      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-neutral-950 via-neutral-950 to-transparent pt-12 flex justify-center">
-        
-        <div className="w-full max-w-3xl flex flex-col gap-2 relative z-10">
+      <div className="shrink-0 p-4 md:p-6 bg-neutral-950 flex justify-center z-10 border-t border-neutral-900/50 relative">
+        <div className="w-full max-w-3xl flex flex-col gap-2 relative">
           <div className="flex items-end bg-[#1e1e1f] p-2 rounded-[32px] shadow-2xl focus-within:bg-[#252526] transition-all border border-neutral-800">
             <button className="p-3 text-neutral-400 hover:text-white rounded-full transition-colors shrink-0">
               <Plus size={20} />
@@ -400,7 +399,7 @@ export default function App() {
                   {file.type === 'las' || file.type === 'laz' ? <Play size={16} className="text-green-400"/> : file.type === 'html' ? <FileText size={16} className="text-blue-400"/> : <Download size={16} className="text-neutral-400"/>}
                   {file.name}
                 </span>
-                {(file.type !== 'las' && file.type !== 'laz') && (
+                
                   <button onClick={() => setSelectedMedia(file)} className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition shadow-sm bg-neutral-700 hover:bg-neutral-600 text-white`}>
                     Abrir Visor
                   </button>
@@ -498,17 +497,32 @@ export default function App() {
   );
 
   return (
-    <div className="absolute inset-0 flex flex-col w-full bg-neutral-950 font-sans text-neutral-50 overflow-hidden">
+    <div className="fixed inset-0 flex flex-col w-full bg-neutral-950 font-sans text-neutral-50 overflow-hidden">
       
       {/* LIGHTBOX MODAL */}
       {selectedMedia && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 md:p-12">
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-2 md:p-8">
           {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-black/90 backdrop-blur-md cursor-zoom-out" 
             onClick={() => { setSelectedMedia(null); setIs3DMode(false); }}
           ></div>
           
+          {/* Top Actions */}
+          <div className="relative z-10 w-full max-w-6xl flex justify-end gap-3 mb-3 pointer-events-auto shrink-0">
+            {selectedMedia.type === 'las' || selectedMedia.type === 'laz' ? (
+              <button onClick={() => setIs3DMode(!is3DMode)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold shadow-lg flex items-center gap-2">
+                <Map size={16} /> {is3DMode ? 'Ver en 2D' : 'Ver en 3D'}
+              </button>
+            ) : null}
+            <a href={selectedMedia.url} download className="w-10 h-10 bg-neutral-800 hover:bg-neutral-700 text-white rounded-full flex items-center justify-center transition shadow-lg border border-neutral-700">
+              <Download size={20} />
+            </a>
+            <button onClick={() => { setSelectedMedia(null); setIs3DMode(false); }} className="w-10 h-10 bg-neutral-800 hover:bg-red-500 text-white rounded-full flex items-center justify-center transition shadow-lg border border-neutral-700">
+              <X size={20} />
+            </button>
+          </div>
+
           {/* Content */}
           <div className="relative z-10 w-full max-w-6xl h-full max-h-[85vh] flex flex-col items-center justify-center pointer-events-none">
             {selectedMedia.preview_b64 ? (
@@ -655,7 +669,7 @@ export default function App() {
         </div>
 
         {/* CHAT AREA */}
-        <div className="shrink-0 border-r border-neutral-800 relative z-10 bg-neutral-950" style={{ width: chatWidth, minWidth: '350px' }}>
+        <div className="shrink-0 h-full overflow-hidden flex flex-col border-r border-neutral-800 relative z-10 bg-neutral-950" style={{ width: chatWidth, minWidth: '350px' }}>
           {ChatContent}
           <div 
             className="absolute top-0 -right-1 bottom-0 w-2 cursor-col-resize hover:bg-blue-500 transition-colors z-50"
