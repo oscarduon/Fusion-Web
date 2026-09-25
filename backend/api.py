@@ -70,13 +70,22 @@ async def execute_command(command: str = Form(...)):
             
             if ext in ["las", "laz"]:
                 out_jpg = f + ".jpg"
+                # 1. Gen 2D Thumbnail
                 subprocess.run(f"/home/oscar/fusion_web/venv/bin/python3 /home/oscar/fusion_web/backend/las_preview.py '{f}' '{out_jpg}'", shell=True)
                 if os.path.exists(out_jpg):
                     with open(out_jpg, "rb") as img_f:
                         file_info["preview_b64"] = base64.b64encode(img_f.read()).decode('utf-8')
                     os.remove(out_jpg)
-                if os.path.exists(f + "_3d.html"):
-                    file_info["html_3d_url"] = f"/files/{filename}_3d.html"
+                
+                # 2. Gen Potree 3D
+                potree_out = os.path.join(potree_dir, filename)
+                if not os.path.exists(os.path.join(potree_out, "index.html")):
+                    # Trigger PotreeConverter in background so it doesn't block
+                    # For windows dev fallback it will just fail silently
+                    subprocess.Popen(f"/home/oscar/PotreeConverter_2.1.2_x64_linux/PotreeConverter '{f}' -o '{potree_out}' --generate-page index", shell=True)
+                
+                # We assume it will exist soon or already exists
+                file_info["html_3d_url"] = f"/potree/{filename}/index.html"
                     
             new_files.append(file_info)
 
