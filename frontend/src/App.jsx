@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
-import { Menu, Terminal, MessageSquare, Send, X, HardDrive, FileText, Download, Play, ChevronUp, ChevronDown, Check, AlertTriangle, Plus, History, Settings, Map, MoreVertical, Edit2, Trash2, Pin, PinOff, Mic, MicOff } from 'lucide-react';
+import { Menu, Terminal, MessageSquare, Send, X, HardDrive, FileText, Download, Play, ChevronUp, ChevronDown, Check, AlertTriangle, Plus, History, Settings, Map, MoreVertical, Edit2, Trash2, Pin, PinOff, Mic, MicOff, Zap } from 'lucide-react';
 
 const MODEL_CATEGORIES = [
   {
@@ -25,6 +25,7 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 export default function App() {
   const [activeTab, setActiveTab] = useState('chat');
   const [isRecording, setIsRecording] = useState(false);
+  const [autoExecute, setAutoExecute] = useState(true);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
 
@@ -289,6 +290,18 @@ export default function App() {
           ...p, 
           chatHistory: [...p.chatHistory, { text: aiText, isUser: false, modelName: selectedModel.name }]
         } : p));
+
+        if (autoExecute) {
+          const parts = (aiText || "").split(/(```[\s\S]*?```)/g);
+          for (const part of parts) {
+            if (part.startsWith('```')) {
+              const code = part.replace(/```[a-zA-Z]*\n?/i, '').replace(/```$/, '').trim();
+              if (code) {
+                await executeCommand(code, targetProjectId);
+              }
+            }
+          }
+        }
         
       } catch (e) {
       setProjects(prev => prev.map(p => p.id === targetProjectId ? {
