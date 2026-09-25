@@ -523,24 +523,36 @@ export default function App() {
 
           {/* Content */}
           <div className="relative z-10 w-full max-w-6xl h-full max-h-[85vh] flex flex-col items-center justify-center pointer-events-none">
-            {selectedMedia.preview_b64 ? (
-              is3DMode && selectedMedia.html_3d_url ? (
-                <div className="w-full h-full bg-[#131314] rounded-xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col border border-neutral-700">
-                  <div className="bg-neutral-800 text-neutral-300 text-xs px-4 py-2 border-b border-neutral-700 flex items-center justify-between">
-                    <span>Visor 3D Interactivo (Optimizada)</span>
+            {selectedMedia.type === 'las' || selectedMedia.type === 'laz' ? (
+              is3DMode ? (
+                selectedMedia.html_3d_url ? (
+                  <div className="w-full h-full bg-[#131314] rounded-xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col border border-neutral-700">
+                    <div className="bg-neutral-800 text-neutral-300 text-xs px-4 py-2 border-b border-neutral-700 flex items-center justify-between">
+                      <span>Visor 3D Interactivo (Optimizada)</span>
+                    </div>
+                    <iframe 
+                      src={selectedMedia.html_3d_url} 
+                      className="flex-1 w-full bg-[#131314]" 
+                      title="3D Viewer"
+                    ></iframe>
                   </div>
-                  <iframe 
-                    src={selectedMedia.html_3d_url} 
-                    className="flex-1 w-full bg-[#131314]" 
-                    title="3D Viewer"
-                  ></iframe>
-                </div>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-neutral-900 rounded-xl border border-neutral-800 pointer-events-auto">
+                    <span className="text-neutral-500 text-sm">Modelo 3D no disponible para este archivo.</span>
+                  </div>
+                )
               ) : (
-                <img 
-                  src={`data:image/jpeg;base64,${selectedMedia.preview_b64}`} 
-                  className="max-w-full max-h-full object-contain rounded-lg shadow-2xl pointer-events-auto" 
-                  alt="Fullscreen Render" 
-                />
+                selectedMedia.preview_b64 ? (
+                  <img 
+                    src={`data:image/jpeg;base64,${selectedMedia.preview_b64}`} 
+                    className="max-w-full max-h-full object-contain rounded-lg shadow-2xl pointer-events-auto" 
+                    alt="Fullscreen Render" 
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-neutral-900 rounded-xl border border-neutral-800 pointer-events-auto">
+                    <span className="text-neutral-500 text-sm">Vista previa 2D no disponible para este archivo.</span>
+                  </div>
+                )
               )
             ) : selectedMedia.type === 'html' ? (
               <div className="w-full h-full bg-white rounded-xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col">
@@ -563,36 +575,7 @@ export default function App() {
                 </div>
               </div>
             )}
-            
-            {/* Top Right Actions */}
-            <div className="absolute -top-12 md:-top-4 -right-2 md:-right-16 flex gap-3 pointer-events-auto items-center">
-              {selectedMedia.html_3d_url && (
-                <button 
-                  onClick={() => setIs3DMode(!is3DMode)}
-                  className={`px-4 h-10 rounded-full font-bold text-xs flex items-center gap-2 transition shadow-lg border ${is3DMode ? 'bg-blue-600 text-white border-blue-500' : 'bg-neutral-800 hover:bg-neutral-700 text-white border-neutral-600'}`}
-                >
-                  <Map size={16} /> {is3DMode ? 'Ver en 2D' : 'Ver en 3D'}
-                </button>
-              )}
-              <a 
-                href={selectedMedia.url} 
-                target="_blank" 
-                download
-                className="w-10 h-10 rounded-full bg-neutral-800 hover:bg-neutral-700 text-white flex items-center justify-center transition shadow-lg border border-neutral-600"
-                title="Descargar archivo original"
-              >
-                <Download size={18} />
-              </a>
-              <button 
-                onClick={() => { setSelectedMedia(null); setIs3DMode(false); }} 
-                className="w-10 h-10 rounded-full bg-neutral-800 hover:bg-red-500 text-white flex items-center justify-center transition shadow-lg border border-neutral-600"
-                title="Cerrar"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            
-            {/* Bottom Title */}
+              {/* Bottom Title */}
             <div className="absolute -bottom-10 bg-neutral-900/80 px-4 py-2 rounded-full border border-neutral-700 backdrop-blur-sm pointer-events-auto">
               <span className="text-sm font-semibold text-white">{selectedMedia.name} {is3DMode ? '(Modo 3D)' : ''}</span>
             </div>
