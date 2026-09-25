@@ -30,7 +30,7 @@ def generate_previews(las_path, out_jpg):
         ax.set_aspect('equal')
         plt.title(f'Vista 2D de {os.path.basename(las_path)}')
         ax.axis('off')
-        plt.savefig(out_jpg, format='jpeg', bbox_inches='tight', facecolor='#000000', quality=85)
+        plt.savefig(out_jpg, format='jpeg', bbox_inches='tight', facecolor='#000000', )
         plt.close(fig)
         
         # 2. 3D HTML (Max 100k points for browser performance)
