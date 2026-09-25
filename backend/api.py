@@ -96,7 +96,7 @@ async def chat_endpoint(text: str = Form(...), model: str = Form("openai/gpt-oss
     router_sys = (
         "You are an expert FUSION LiDAR routing agent. The available commands are: " + 
         ", ".join(list(FUSION_DB.keys())) + 
-        "\nBased on the user's request, reply ONLY with a comma-separated list of the command names needed to solve it. "
+        "\nBased on the user's request, reply ONLY with a comma-separated list of the command names needed to solve it. (Hint: MDT/DTM = GridSurfaceCreate & GroundFilter). "
         "Do not include any other text. If no specific command is needed, reply with NONE."
     )
     
@@ -134,6 +134,8 @@ async def chat_endpoint(text: str = Form(...), model: str = Form("openai/gpt-oss
         "REGLAS ESTRICTAS DE SINTAXIS FUSION-LTK:\n"
         "- NO inventes archivos que no existan. Si el usuario no da nombre de archivo de entrada, usa el que haya: C:\\FUSION\\betera15.las\n"
         "- Los ejecutables están en C:\\FUSION\\\n"
+        "- NUNCA uses LAStools ni herramientas externas (como las2txt). Usa SOLO los comandos nativos de FUSION.\n"
+        "- Para crear un MDT / modelo de superficie a partir de un LAS, usa SIEMPRE GridSurfaceCreate.\n"
         "- CUANDO SUGIERAS UN COMANDO, DEBES ENVOLVERLO EN UN BLOQUE DE CÓDIGO BASH (```bash).\n"
         "\n"
     )
