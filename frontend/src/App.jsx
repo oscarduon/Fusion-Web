@@ -24,6 +24,40 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('chat');
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef(null);
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'es-ES';
+
+      recognition.onstart = () => setIsRecording(true);
+      recognition.onend = () => setIsRecording(false);
+      recognition.onerror = (e) => {
+        console.error("Mic error:", e.error);
+        setIsRecording(false);
+      };
+      recognition.onresult = (e) => {
+        const transcript = e.results[0][0].transcript;
+        setInputText(prev => prev + (prev ? ' ' : '') + transcript);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  const toggleRecording = () => {
+    if (!recognitionRef.current) return alert("Tu navegador no soporta reconocimiento de voz nativo (usa Chrome o Edge).");
+    if (isRecording) {
+      recognitionRef.current.stop();
+    } else {
+      recognitionRef.current.start();
+    }
+  };
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inputText, setInputText] = useState('');
   const [selectedModel, setSelectedModel] = useState(MODEL_CATEGORIES[0].models[0]);
