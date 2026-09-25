@@ -380,7 +380,7 @@ export default function App() {
 
   const IdeContent = (
     <div className="flex flex-col h-full bg-neutral-900 overflow-hidden">
-      <div className="flex-[1.2] min-h-0 bg-black relative border-b border-neutral-800 p-4 overflow-y-auto flex flex-col gap-4">
+      <div className="flex-1 min-h-0 bg-black relative border-b border-neutral-800 p-4 overflow-y-auto flex flex-col gap-4">
         {visorFiles.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center text-neutral-600 font-mono text-xs">
             (No hay archivos recientes)
@@ -422,7 +422,7 @@ export default function App() {
         )}
       </div>
 
-      <div className={`flex flex-col bg-neutral-900 border-t border-neutral-800 transition-all duration-300 ${showConsole ? 'flex-[1] min-h-[150px]' : 'h-[52px] min-h-[52px]'}`}>
+      <div className={`flex flex-col bg-neutral-900 border-t border-neutral-800 transition-all duration-300 ${showConsole ? 'flex-[0.8] min-h-[150px]' : 'flex-none h-[52px] overflow-hidden'}`}>
         <div className="flex items-center justify-between p-3.5 shrink-0 cursor-pointer select-none hover:bg-neutral-800 transition" onClick={() => setShowConsole(!showConsole)}>
           <h3 className="text-xs font-bold tracking-wider text-neutral-500 uppercase flex items-center gap-2">
             <Terminal size={14}/> Consola de Wine
