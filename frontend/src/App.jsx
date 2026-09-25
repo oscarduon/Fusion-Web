@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
 import { Menu, Terminal, MessageSquare, Send, X, HardDrive, FileText, Download, Play, ChevronUp, ChevronDown, Check, AlertTriangle, Plus, History, Settings, Map, MoreVertical, Edit2, Trash2, Pin, PinOff, Mic, MicOff, Zap } from 'lucide-react';
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 const MODEL_CATEGORIES = [
   {
