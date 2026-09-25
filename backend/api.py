@@ -220,7 +220,26 @@ async def execute_command(command: str = Form(...)):
             ext = filename.split('.')[-1].lower() if '.' in filename else ''
             file_info = {"name": filename, "type": ext, "url": f"/files/{filename}"}
             
-            if ext in ["tif", "tiff"]:
+            if ext == "dtm":
+                  out_tif = f + ".tif"
+                  out_jpg = f + ".jpg"
+                  # Convert DTM to TIF using FUSION
+                  if is_windows:
+                      subprocess.run(f'C:\\FUSION\\DTM2TIF.exe "{f}" "{out_tif}"', shell=True)
+                      if os.path.exists(out_tif):
+                          subprocess.run(f'python backend/tif_preview.py "{out_tif}" "{out_jpg}"', shell=True)
+                  else:
+                      subprocess.run(f"xvfb-run -a wine ~/.wine/drive_c/FUSION/DTM2TIF.exe '{f}' '{out_tif}'", shell=True)
+                      if os.path.exists(out_tif):
+                          subprocess.run(f"/home/oscar/fusion_web/venv/bin/python3 /home/oscar/fusion_web/backend/tif_preview.py '{out_tif}' '{out_jpg}'", shell=True)
+                          
+                  if os.path.exists(out_jpg):
+                      with open(out_jpg, "rb") as img_f:
+                          file_info["preview_b64"] = base64.b64encode(img_f.read()).decode('utf-8')
+                      os.remove(out_jpg)
+                  if os.path.exists(out_tif):
+                      os.remove(out_tif)
+              if ext in ["tif", "tiff"]:
                 out_jpg = f + ".jpg"
                 if is_windows:
                     subprocess.run(f'python backend/tif_preview.py "{f}" "{out_jpg}"', shell=True)
