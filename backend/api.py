@@ -76,16 +76,87 @@ async def get_file(filename: str):
         return FileResponse(path)
     return {"error": "File not found"}
 
+
+import json
+import os
+
+# Load the RAG DB once
+fusion_db_path = os.path.join(os.path.dirname(__file__), "fusion_commands.json")
+FUSION_DB = {}
+if os.path.exists(fusion_db_path):
+    with open(fusion_db_path, "r", encoding="utf-8") as f:
+        FUSION_DB = json.load(f)
+
 @app.post("/api/chat")
-async def chat_endpoint(text: str = Form(...), model: str = Form("openai/gpt-oss-120b")):
+async def chat_endpoint(text: str = Form(...), model: str = Form("llama-3.1-70b-versatile")):
     prompt_text = text
-    sys_prompt = FUSION_CHEAT_SHEET
+    
+    # 1. THE LIBRARIAN AGENT (Router)
+    # Ask the LLM to identify which FUSION commands are needed for this task.
+    router_sys = (
+        "You are an expert FUSION LiDAR routing agent. The available commands are: " + 
+        ", ".join(list(FUSION_DB.keys())) + 
+        "\nBased on the user's request, reply ONLY with a comma-separated list of the command names needed to solve it. "
+        "Do not include any other text. If no specific command is needed, reply with NONE."
+    )
+    
+    try:
+        router_chat = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": router_sys},
+                {"role": "user", "content": prompt_text}
+            ],
+            model="llama-3.1-70b-versatile", 
+            temperature=0.0
+        )
+        commands_needed_str = router_chat.choices[0].message.content.strip()
+    except Exception as e:
+        commands_needed_str = "NONE"
+        
+    print(f"Router identified commands: {commands_needed_str}")
+    
+    # 2. RETRIEVE KNOWLEDGE
+    rag_context = ""
+    if commands_needed_str and commands_needed_str.upper() != "NONE":
+        requested_cmds = [cmd.strip() for cmd in commands_needed_str.replace("`", "").split(",")]
+        for cmd in requested_cmds:
+            # Case insensitive match
+            for db_cmd in FUSION_DB:
+                if db_cmd.lower() == cmd.lower():
+                    rag_context += f"\n\n=== OFFICIAL MANUAL FOR {db_cmd} ===\n{FUSION_DB[db_cmd]}\n"
+                    break
+
+    # 3. THE FOREMAN AGENT (Executor)
+    # Overwrite the FUSION_CHEAT_SHEET with the dynamic RAG context
+    dynamic_sys_prompt = (
+        "ERES UN EXPERTO EN TOPOGRAFÍA Y FUSION-LTK.\n"
+        "Tu objetivo es ayudar al usuario a procesar datos LiDAR. Puedes conversar en español.\n"
+        "REGLAS ESTRICTAS DE SINTAXIS FUSION-LTK:\n"
+        "- NO inventes archivos que no existan. Si el usuario no da nombre de archivo de entrada, usa el que haya: C:\\FUSION\\betera15.las\n"
+        "- Los ejecutables están en C:\\FUSION\\\n"
+        "- CUANDO SUGIERAS UN COMANDO, DEBES ENVOLVERLO EN UN BLOQUE DE CÓDIGO BASH (```bash).\n"
+        "\n"
+    )
+    
+    if rag_context:
+        dynamic_sys_prompt += (
+            "A CONTINUACIÓN TIENES EXTRACTOS DEL MANUAL OFICIAL DE FUSION PARA ESTA TAREA:\n"
+            "LEELOS CUIDADOSAMENTE PARA NO INVENTARTE NINGÚN 'SWITCH' NI PARÁMETRO QUE NO EXISTA.\n"
+            f"{rag_context}\n"
+        )
+    else:
+        dynamic_sys_prompt += (
+            "NO SE NECESITAN COMANDOS ESPECÍFICOS PARA ESTA TAREA, ACTÚA COMO UN ASISTENTE NORMAL.\n"
+        )
+        
     chat = client.chat.completions.create(
-        messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": prompt_text}],
-        model=model, temperature=0.3,
+        messages=[{"role": "system", "content": dynamic_sys_prompt}, {"role": "user", "content": prompt_text}],
+        model="llama-3.1-70b-versatile", 
+        temperature=0.3,
     )
     reply = chat.choices[0].message.content.strip()
     return {"transcription": prompt_text, "text": reply}
+
 
 @app.post("/api/transcribe")
 async def transcribe_audio(audio: UploadFile = File(...)):
