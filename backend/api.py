@@ -70,7 +70,7 @@ async def execute_command(command: str = Form(...)):
             
             if ext in ["las", "laz"]:
                 out_jpg = f + ".jpg"
-                subprocess.run(f"/home/oscar/fusion_web/venv/bin/python3 /home/oscar/fusion_web/las_preview.py '{f}' '{out_jpg}'", shell=True)
+                subprocess.run(f"/home/oscar/fusion_web/venv/bin/python3 /home/oscar/fusion_web/backend/las_preview.py '{f}' '{out_jpg}'", shell=True)
                 if os.path.exists(out_jpg):
                     with open(out_jpg, "rb") as img_f:
                         file_info["preview_b64"] = base64.b64encode(img_f.read()).decode('utf-8')
