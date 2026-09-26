@@ -112,7 +112,7 @@ export default function App() {
         setProjects(pr.projects || []);
         localStorage.removeItem('react_projects');
       } else {
-        alert('No se pudo iniciar sesión con Google.');
+        alert(d.detail || 'No se pudo iniciar sesión con Google.');
       }
     } catch (e) {
       alert('Error de red al iniciar sesión.');

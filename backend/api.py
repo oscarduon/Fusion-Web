@@ -115,7 +115,10 @@ def verify_google_id_token(token: str) -> dict:
         raise HTTPException(status_code=503, detail="Google login no configurado (falta GOOGLE_CLIENT_ID).")
     if not _google_auth_available:
         raise HTTPException(status_code=500, detail="google-auth no instalado en el servidor.")
-    return google_id_token.verify_oauth2_token(token, google_requests.Request(), audience=GOOGLE_CLIENT_ID)
+    try:
+        return google_id_token.verify_oauth2_token(token, google_requests.Request(), audience=GOOGLE_CLIENT_ID)
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Token de Google inválido: {e}")
 
 def create_session(user_id: str) -> str:
     token = secrets.token_urlsafe(32)
