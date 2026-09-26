@@ -461,18 +461,23 @@ export default function App() {
     }
   };
 
-  const handleDriveUpload = async () => {
+  const handleDriveUpload = async (filesList = null) => {
     setShowDriveMenu(false);
-    updateCurrentProject({ ideLogs: ideLogs + '\n\nSubiendo a Google Drive...' });
+    updateCurrentProject({ ideLogs: ideLogs + '
+
+Subiendo a Google Drive...' });
     try {
       if (driveOwner) {
-        const res = await apiFetch('/api/drive/upload', { method: 'POST', body: {} });
+        const res = await apiFetch('/api/drive/upload', { method: 'POST', body: { files: filesList } });
         const data = await res.json();
-        updateCurrentProject({ ideLogs: ideLogs + (data.status === 'success' ? '\n✅ ¡Subida completada!' : '\n❌ Error al subir.') });
+        updateCurrentProject({ ideLogs: ideLogs + (data.status === 'success' ? '
+✅ ¡Subida completada!' : '
+❌ Error al subir.') });
       } else {
         // non-owner: request a Drive access token via Google OAuth2 token client
         if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-          updateCurrentProject({ ideLogs: ideLogs + '\n❌ No se pudo conectar con Google.' });
+          updateCurrentProject({ ideLogs: ideLogs + '
+❌ No se pudo conectar con Google.' });
           return;
         }
         const tokenClient = window.google.accounts.oauth2.initTokenClient({
@@ -480,19 +485,39 @@ export default function App() {
           scope: 'https://www.googleapis.com/auth/drive.file',
           callback: async (resp) => {
             if (resp.access_token) {
-              const res = await apiFetch('/api/drive/upload', { method: 'POST', body: { access_token: resp.access_token } });
+              const res = await apiFetch('/api/drive/upload', { method: 'POST', body: { access_token: resp.access_token, files: filesList } });
               const data = await res.json();
-              updateCurrentProject({ ideLogs: ideLogs + (data.status === 'success' ? '\n✅ ¡Subida a tu Drive completada!' : '\n❌ Error al subir.') });
+              updateCurrentProject({ ideLogs: ideLogs + (data.status === 'success' ? '
+✅ ¡Subida a tu Drive completada!' : '
+❌ Error al subir.') });
             } else {
-              updateCurrentProject({ ideLogs: ideLogs + '\n❌ Permiso de Drive denegado.' });
+              updateCurrentProject({ ideLogs: ideLogs + '
+❌ Permiso de Drive denegado.' });
             }
           },
         });
         tokenClient.requestAccessToken();
       }
     } catch (e) {
-      updateCurrentProject({ ideLogs: ideLogs + '\n❌ Error de red.' });
+      updateCurrentProject({ ideLogs: ideLogs + `
+❌ Error: ${e}` });
     }
+  };
+
+  const handleDownloadAllGenerated = () => {
+    if (!visorFiles) return;
+    visorFiles.forEach((f, idx) => {
+      if(f.url) {
+        setTimeout(() => {
+          const a = document.createElement('a');
+          a.href = f.url;
+          a.download = f.name || 'archivo';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }, idx * 300);
+      }
+    });
   };
 
   const sortedProjects = [...projects].sort((a, b) => {
@@ -769,7 +794,7 @@ export default function App() {
             ) : ['tif', 'tiff', 'dtm', 'img'].includes(selectedMedia.type) ? (
               selectedMedia.preview_b64 ? (
                 <div className="w-full h-full flex items-center justify-center pointer-events-auto overflow-hidden bg-black rounded-xl border border-neutral-800">
-                  <TransformWrapper initialScale={1} minScale={0.1} maxScale={10} centerOnInit={true}>
+                  <TransformWrapper initialScale={1} minScale={0.1} maxScale={10} centerOnInit={true} wheel={{ step: 0.1, smoothStep: 0.02 }}>
                     <TransformComponent wrapperStyle={{width: '100%', height: '100%'}} contentStyle={{width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
                       <img src={`data:image/png;base64,${selectedMedia.preview_b64}`} className="max-w-full max-h-full object-contain shadow-2xl" alt="Preview" />
                     </TransformComponent>

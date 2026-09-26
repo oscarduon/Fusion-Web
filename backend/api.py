@@ -757,17 +757,37 @@ async def drive_upload(request: Request, user=Depends(require_auth)):
     if user is None:
         raise HTTPException(status_code=401, detail="No autenticado")
 
+    body = {}
+    try:
+        body = await request.json()
+    except Exception:
+        pass
+        
+    files_to_upload = body.get("files", None)
+
     if _is_owner(user):
         try:
-            subprocess.run(
-                "rclone copy ~/.wine/drive_c/FUSION/ GoogleDriveFusion:fusion_output --max-age 60m --exclude betera15.las",
-                shell=True, check=True, timeout=600,
-            )
+            if files_to_upload and isinstance(files_to_upload, list):
+                # Generar temp file para rclone
+                import tempfile
+                with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp:
+                    for fname in files_to_upload:
+                        tmp.write(fname + '\n')
+                    tmp_name = tmp.name
+                subprocess.run(
+                    f"rclone copy ~/.wine/drive_c/FUSION/ GoogleDriveFusion:fusion_output --files-from {tmp_name}",
+                    shell=True, check=True, timeout=600,
+                )
+                os.remove(tmp_name)
+            else:
+                subprocess.run(
+                    "rclone copy ~/.wine/drive_c/FUSION/ GoogleDriveFusion:fusion_output --max-age 60m --exclude betera15.las",
+                    shell=True, check=True, timeout=600,
+                )
             return {"status": "success", "mode": "owner"}
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
-    body = await request.json()
     access_token = body.get("access_token")
     if not access_token:
         raise HTTPException(status_code=400, detail="Conecta tu cuenta de Google Drive primero.")
@@ -775,19 +795,31 @@ async def drive_upload(request: Request, user=Depends(require_auth)):
     uploaded = []
     errors = []
     cutoff = time.time() - 3600
-    for f in glob.glob(os.path.join(fusion_dir, "*")):
+    
+    file_paths_to_check = []
+    if files_to_upload and isinstance(files_to_upload, list):
+        for fn in files_to_upload:
+            if fn and ".." not in fn and not fn.startswith("/"):
+                file_paths_to_check.append(os.path.join(fusion_dir, fn))
+    else:
+        file_paths_to_check = glob.glob(os.path.join(fusion_dir, "*"))
+
+    for f in file_paths_to_check:
         if not os.path.isfile(f):
             continue
-        if os.path.getmtime(f) < cutoff:
+        # If specific files were not requested, filter by time
+        if not files_to_upload and os.path.getmtime(f) < cutoff:
             continue
+            
         fn = os.path.basename(f)
         if fn.lower() == "betera15.las" or fn.startswith("temp_exec_"):
             continue
         if os.path.getsize(f) > 50 * 1024 * 1024:
             continue
+            
         try:
             with open(f, "rb") as fh:
-                content = fh.read()
+                file_data = fh.read()
             metadata = {"name": fn}
             async with httpx.AsyncClient(timeout=120) as client:
                 r = await client.post(
@@ -795,7 +827,7 @@ async def drive_upload(request: Request, user=Depends(require_auth)):
                     headers={"Authorization": f"Bearer {access_token}"},
                     files={
                         "metadata": ("metadata", json.dumps(metadata), "application/json"),
-                        "file": (fn, content, "application/octet-stream"),
+                        "file": (fn, file_data, "application/octet-stream"),
                     },
                 )
             if r.status_code in (200, 201):
