@@ -24,6 +24,7 @@ const MODEL_CATEGORIES = [
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export default function App() {
+  console.log("VERSION 5 LOADED");
   const [activeTab, setActiveTab] = useState('chat');
   const [isRecording, setIsRecording] = useState(false);
   const [autoExecute, setAutoExecute] = useState(true);
