@@ -88,15 +88,7 @@ export default function App() {
   const [isTyping, setIsTyping] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   
-  useEffect(() => {
-    if (!chatEndRef.current) return;
-    const observer = new IntersectionObserver((entries) => {
-      // If the end marker is visible, hide the button. If it's NOT visible, we are scrolled up, so show it.
-      setShowScrollButton(!entries[0].isIntersecting);
-    }, { root: chatContainerRef.current, threshold: 0 });
-    observer.observe(chatEndRef.current);
-    return () => observer.disconnect();
-  }, [currentProject.chatHistory]);
+
 
   const [selectedModel, setSelectedModel] = useState(MODEL_CATEGORIES[0].models[0]);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
@@ -134,6 +126,16 @@ export default function App() {
   const [menuOpenProjectId, setMenuOpenProjectId] = useState(null);
   const chatEndRef = useRef(null);
   const chatContainerRef = useRef(null);
+
+  useEffect(() => {
+    if (!chatEndRef.current) return;
+    const observer = new IntersectionObserver((entries) => {
+      setShowScrollButton(!entries[0].isIntersecting);
+    }, { root: chatContainerRef.current, threshold: 0 });
+    observer.observe(chatEndRef.current);
+    return () => observer.disconnect();
+  }, [chatHistory]);
+
 
   useEffect(() => {
     if (window.innerWidth >= 768) setSidebarOpen(true);
