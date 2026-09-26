@@ -543,15 +543,15 @@ export default function App() {
               endRef.scrollIntoView({ behavior: 'smooth', block: 'end' });
             }
           }} 
-          className="absolute bottom-28 right-8 bg-blue-600 hover:bg-blue-500 text-white rounded-full p-3 shadow-2xl transition-all z-[50] flex items-center justify-center animate-bounce border border-blue-400"
+          className="absolute bottom-24 right-4 md:bottom-28 md:right-8 bg-blue-600 hover:bg-blue-500 text-white rounded-full p-3 shadow-2xl transition-all z-[50] flex items-center justify-center animate-bounce border border-blue-400"
           title="Bajar al final"
         >
           <ArrowDown size={24} />
         </button>
       )}
-        <div className="shrink-0 p-4 md:p-6 bg-neutral-950 flex justify-center z-10 border-t border-neutral-900/50 relative">
+        <div className="shrink-0 p-2 md:p-6 bg-neutral-950 flex justify-center z-10 border-t border-neutral-900/50 relative">
         <div className="w-full max-w-3xl flex flex-col gap-2 relative">
-          <div className="flex items-end bg-[#1e1e1f] p-2 rounded-[32px] shadow-2xl focus-within:bg-[#252526] transition-all border border-neutral-800">
+          <div className="flex items-end bg-[#1e1e1f] p-1.5 md:p-2 rounded-[32px] shadow-2xl focus-within:bg-[#252526] transition-all border border-neutral-800">
             <button className="p-3 text-neutral-400 hover:text-white rounded-full transition-colors shrink-0">
               <Plus size={20} />
             </button>

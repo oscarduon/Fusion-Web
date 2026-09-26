@@ -46,3 +46,10 @@ Cualquier IA que retome el proyecto a partir de este punto debe revisar estas ta
 *   **Problemas de Caché**: El VPS está configurado con Nginx o FastAPI sirviendo estáticos muy agresivos. Para las actualizaciones de UI, el backend inyecta una cabecera HTTP `Cache-Control: no-store` al `index.html` para forzar a los navegadores a actualizar.
 
 *FIN DEL DOCUMENTO. SI ERES UNA IA, USA ESTO COMO TU MEMORIA CENTRAL.*
+
+## 8. Optimizaciones Responsivas y Mobile (Bugs Resueltos)
+*   **Barra de Envío y Botón Flotante en Pantallas Estrechas (ej. Galaxy S10)**: El botón de enviar y el padding del contenedor inferior se desbordaban en dispositivos móviles con anchos inferiores a 360px. Se ajustó el espaciado usando clases de Tailwind (`p-2 md:p-6`, `right-4 md:right-8`) para garantizar que la UI se contraiga adecuadamente sin empujar elementos fuera del Viewport.
+
+## 9. Decisiones de Arquitectura Abiertas (Debates de Diseño)
+*   **Retención de Archivos (VPS Storage)**: Para evitar llenar los 100GB del disco del VPS, se implementará un `cronjob` (o lógica de base de datos) que elimine los archivos `.las` y rasters de la carpeta de trabajo del usuario tras **24 horas** de inactividad. Los chats y los metadatos de los proyectos se conservarán indefinidamente en Firebase, pero los binarios pesados serán efímeros.
+*   **Alternativa a Leica Infinity (RTKLIB)**: Se ha decidido explorar RTKLIB en línea de comandos como alternativa a herramientas comerciales pesadas (Leica) para la compensación de redes GNSS. RTKLIB es ultra ligero y puede integrarse en el backend Python para ejecutarse de manera autónoma cuando el usuario suba logs de observación RINEX o NMEA.
