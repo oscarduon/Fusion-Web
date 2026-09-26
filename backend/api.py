@@ -137,6 +137,7 @@ async def chat_endpoint(text: str = Form(...), model: str = Form("openai/gpt-oss
         "- NUNCA uses LAStools ni herramientas externas (como las2txt). Usa SOLO los comandos nativos de FUSION.\n"
         "- Para crear un MDT / modelo de superficie a partir de un LAS, usa SIEMPRE GridSurfaceCreate.\n"
         "- CUANDO SUGIERAS UN COMANDO, DEBES ENVOLVERLO EN UN BLOQUE DE CÓDIGO BASH (```bash).\n"
+        "- Si necesitas ejecutar VARIOS comandos para lograr el objetivo, ponlos TODOS JUNTOS EN UN ÚNICO BLOQUE DE CÓDIGO BASH (```bash), uno por línea. NO crees bloques separados, el usuario quiere automatización con un solo click.\n"
         "\n"
     )
     
