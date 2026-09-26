@@ -88,12 +88,15 @@ export default function App() {
   const [isTyping, setIsTyping] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   
-  const handleScroll = () => {
-    if (!chatContainerRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
-    // Show button if we are scrolled up more than 100px from bottom
-    setShowScrollButton(scrollHeight - scrollTop - clientHeight > 100);
-  };
+  useEffect(() => {
+    if (!chatEndRef.current) return;
+    const observer = new IntersectionObserver((entries) => {
+      // If the end marker is visible, hide the button. If it's NOT visible, we are scrolled up, so show it.
+      setShowScrollButton(!entries[0].isIntersecting);
+    }, { root: chatContainerRef.current, threshold: 0 });
+    observer.observe(chatEndRef.current);
+    return () => observer.disconnect();
+  }, [currentProject.chatHistory]);
 
   const [selectedModel, setSelectedModel] = useState(MODEL_CATEGORIES[0].models[0]);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
@@ -144,7 +147,7 @@ export default function App() {
 
   useEffect(() => {
     if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
   }, [chatHistory, activeTab, isTyping]);
 
@@ -489,7 +492,7 @@ export default function App() {
         <div className="w-10"></div> {/* Spacer */}
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 hide-scrollbar flex flex-col min-h-0 pt-16 md:pt-20 relative" ref={chatContainerRef} onScroll={handleScroll}>
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 hide-scrollbar flex flex-col min-h-0 pt-16 md:pt-20 relative" ref={chatContainerRef}>
         {chatHistory.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-neutral-500 space-y-6">
             <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-2xl opacity-80">
@@ -520,19 +523,21 @@ export default function App() {
       </div>
       
       
-                <button 
+                      {showScrollButton && (
+        <button 
           onClick={() => {
-            if (chatContainerRef.current) {
-              chatContainerRef.current.scrollTo({ top: 9999999, behavior: 'smooth' });
-              chatContainerRef.current.scrollTop = 9999999;
+            if (chatEndRef.current) {
+              chatEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            } else if (chatContainerRef.current) {
+              chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
             }
-            window.scrollTo(0, document.body.scrollHeight);
           }} 
           className="absolute bottom-28 right-8 bg-blue-600 hover:bg-blue-500 text-white rounded-full p-3 shadow-2xl transition-all opacity-90 hover:opacity-100 z-50 flex items-center justify-center animate-bounce"
           title="Bajar al final"
         >
           <ArrowDown size={24} />
         </button>
+      )}
 
         <div className="shrink-0 p-4 md:p-6 bg-neutral-950 flex justify-center z-10 border-t border-neutral-900/50 relative">
         <div className="w-full max-w-3xl flex flex-col gap-2 relative">
