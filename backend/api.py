@@ -241,10 +241,10 @@ def _project_to_dict(row) -> dict:
     return {
         "id": row["id"],
         "name": row["name"],
-        "is_pinned": bool(row["is_pinned"]),
-        "updated_at": row["updated_at"],
-        "chat_history": json.loads(row["chat_history"] or "[]"),
-        "ide_logs": row["ide_logs"] or "Esperando comandos...",
+        "isPinned": bool(row["is_pinned"]),
+        "updatedAt": row["updated_at"],
+        "chatHistory": json.loads(row["chat_history"] or "[]"),
+        "ideLogs": row["ide_logs"] or "Esperando comandos...",
     }
 
 @app.get("/api/projects")

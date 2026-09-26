@@ -266,6 +266,26 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleEsc);
   }, []);
 
+  // ---- resize del divisor chat / IDE ----
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!isDragging.current) return;
+      const sb = sidebarOpen ? 260 : 0;
+      const maxW = Math.max(350, window.innerWidth - sb - 350);
+      setChatWidth(Math.max(350, Math.min(e.clientX - sb, maxW)));
+    };
+    const onUp = () => {
+      isDragging.current = false;
+      document.body.style.cursor = '';
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [sidebarOpen]);
+
   useEffect(() => {
     if (selectedMedia && !selectedMedia.preview_b64 && selectedMedia.type !== 'html') {
       const ext = (selectedMedia.type || '').toLowerCase();
@@ -568,7 +588,7 @@ export default function App() {
 
   const IdeContent = (
     <div className="flex flex-col h-full bg-neutral-900 overflow-hidden">
-      <div className="flex-1 min-h-0 bg-black relative border-b border-neutral-800 p-4 overflow-y-auto flex flex-col gap-4">
+      <div className="flex-1 min-h-0 bg-black relative border-b border-neutral-800 p-4 overflow-y-auto overscroll-y-contain touch-pan-y flex flex-col gap-4">
         {visorFiles.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center text-neutral-600 font-mono text-xs">(No hay archivos recientes)</div>
         ) : visorFiles[0].status === 'loading' ? (
@@ -578,7 +598,7 @@ export default function App() {
           </div>
         ) : (
           visorFiles.map((file, i) => (
-            <div key={i} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 flex flex-col gap-3 shadow-lg">
+            <div key={i} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 flex flex-col gap-3 shadow-lg shrink-0">
               <div className="flex justify-between items-center">
                 <span className="font-bold text-sm text-neutral-200 truncate pr-4 flex items-center gap-2">
                   {file.type === 'las' || file.type === 'laz' ? <Play size={16} className="text-green-400"/> : file.type === 'html' ? <FileText size={16} className="text-blue-400"/> : <Download size={16} className="text-neutral-400"/>}
@@ -617,7 +637,7 @@ export default function App() {
           </div>
         </div>
         {showConsole && (
-          <div className="flex-1 min-h-0 bg-black border border-neutral-800 rounded-2xl mx-4 mb-4 p-4 text-[11px] font-mono text-green-400 overflow-y-auto whitespace-pre-wrap shadow-inner leading-relaxed">{ideLogs}</div>
+          <div className="flex-1 min-h-0 bg-black border border-neutral-800 rounded-2xl mx-4 mb-4 p-4 text-[11px] font-mono text-green-400 overflow-y-auto overscroll-y-contain touch-pan-y whitespace-pre-wrap shadow-inner leading-relaxed">{ideLogs}</div>
         )}
       </div>
     </div>
@@ -804,7 +824,7 @@ export default function App() {
 
         <div className="shrink-0 h-full overflow-hidden flex flex-col border-r border-neutral-800 relative z-10 bg-neutral-950" style={{ width: chatWidth, minWidth: '350px' }}>
           {ChatContent}
-          <div className="absolute top-0 -right-1 bottom-0 w-2 cursor-col-resize hover:bg-blue-500 transition-colors z-50" onMouseDown={() => { isDragging.current = true; document.body.style.cursor = 'col-resize'; }}></div>
+          <div className="absolute top-0 -right-1 bottom-0 w-2 cursor-col-resize hover:bg-blue-500 transition-colors z-50" onMouseDown={(e) => { e.preventDefault(); isDragging.current = true; document.body.style.cursor = 'col-resize'; }}></div>
         </div>
 
         <div className="flex-1 shrink-0 h-full overflow-hidden bg-neutral-900 border-l border-neutral-800/50">{IdeContent}</div>
