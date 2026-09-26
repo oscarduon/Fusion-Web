@@ -127,14 +127,13 @@ export default function App() {
   const chatEndRef = useRef(null);
   const chatContainerRef = useRef(null);
 
-  useEffect(() => {
-    if (!chatEndRef.current) return;
-    const observer = new IntersectionObserver((entries) => {
-      setShowScrollButton(!entries[0].isIntersecting);
-    }, { root: chatContainerRef.current, threshold: 0 });
-    observer.observe(chatEndRef.current);
-    return () => observer.disconnect();
-  }, [chatHistory]);
+  const handleScroll = (e) => {
+    const target = e.target;
+    if (!target) return;
+    const { scrollTop, scrollHeight, clientHeight } = target;
+    // Hide button if we are within 50px of the bottom
+    setShowScrollButton(scrollHeight - scrollTop - clientHeight > 50);
+  };
 
 
   useEffect(() => {
@@ -498,7 +497,7 @@ export default function App() {
         <div className="w-10"></div> {/* Spacer */}
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 hide-scrollbar flex flex-col min-h-0 pt-16 md:pt-20 relative" ref={chatContainerRef} id="chat-scroll-container">
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 hide-scrollbar flex flex-col min-h-0 pt-16 md:pt-20 relative" ref={chatContainerRef} id="chat-scroll-container" onScroll={handleScroll}>
         {chatHistory.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-neutral-500 space-y-6">
             <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-2xl opacity-80">
@@ -531,6 +530,25 @@ export default function App() {
       
                       
 
+        
+      {showScrollButton && (
+        <button 
+          onClick={() => {
+            const container = document.getElementById('chat-scroll-container');
+            if (container) {
+              container.scrollTop = container.scrollHeight + 5000;
+            }
+            const endRef = document.getElementById('chat-end-marker');
+            if (endRef) {
+              endRef.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }
+          }} 
+          className="absolute bottom-28 right-8 bg-blue-600 hover:bg-blue-500 text-white rounded-full p-3 shadow-2xl transition-all z-[50] flex items-center justify-center animate-bounce border border-blue-400"
+          title="Bajar al final"
+        >
+          <ArrowDown size={24} />
+        </button>
+      )}
         <div className="shrink-0 p-4 md:p-6 bg-neutral-950 flex justify-center z-10 border-t border-neutral-900/50 relative">
         <div className="w-full max-w-3xl flex flex-col gap-2 relative">
           <div className="flex items-end bg-[#1e1e1f] p-2 rounded-[32px] shadow-2xl focus-within:bg-[#252526] transition-all border border-neutral-800">
@@ -670,24 +688,6 @@ export default function App() {
 
   return (
     <div className="fixed inset-0 flex flex-col w-full bg-neutral-950 font-sans text-neutral-50 overflow-hidden">
-      {showScrollButton && activeTab === 'chat' && (
-        <button 
-          onClick={() => {
-            const container = document.getElementById('chat-scroll-container');
-            if (container) {
-              container.scrollTop = container.scrollHeight + 5000;
-            }
-            const endRef = document.getElementById('chat-end-marker');
-            if (endRef) {
-              endRef.scrollIntoView({ behavior: 'smooth', block: 'end' });
-            }
-          }} 
-          className="fixed bottom-28 right-8 bg-blue-600 hover:bg-blue-500 text-white rounded-full p-4 shadow-2xl transition-all z-[9999] flex items-center justify-center animate-bounce border-2 border-white/20"
-          title="Bajar al final"
-        >
-          <ArrowDown size={28} />
-        </button>
-      )}
 
       
       {/* LIGHTBOX MODAL */}
