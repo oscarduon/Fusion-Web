@@ -463,21 +463,16 @@ export default function App() {
 
   const handleDriveUpload = async (filesList = null) => {
     setShowDriveMenu(false);
-    updateCurrentProject({ ideLogs: ideLogs + '
-
-Subiendo a Google Drive...' });
+    updateCurrentProject({ ideLogs: ideLogs + '\n\nSubiendo a Google Drive...' });
     try {
       if (driveOwner) {
         const res = await apiFetch('/api/drive/upload', { method: 'POST', body: { files: filesList } });
         const data = await res.json();
-        updateCurrentProject({ ideLogs: ideLogs + (data.status === 'success' ? '
-✅ ¡Subida completada!' : '
-❌ Error al subir.') });
+        updateCurrentProject({ ideLogs: ideLogs + (data.status === 'success' ? '\n✅ ¡Subida completada!' : '\n❌ Error al subir.') });
       } else {
         // non-owner: request a Drive access token via Google OAuth2 token client
         if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-          updateCurrentProject({ ideLogs: ideLogs + '
-❌ No se pudo conectar con Google.' });
+          updateCurrentProject({ ideLogs: ideLogs + '\n❌ No se pudo conectar con Google.' });
           return;
         }
         const tokenClient = window.google.accounts.oauth2.initTokenClient({
@@ -487,12 +482,9 @@ Subiendo a Google Drive...' });
             if (resp.access_token) {
               const res = await apiFetch('/api/drive/upload', { method: 'POST', body: { access_token: resp.access_token, files: filesList } });
               const data = await res.json();
-              updateCurrentProject({ ideLogs: ideLogs + (data.status === 'success' ? '
-✅ ¡Subida a tu Drive completada!' : '
-❌ Error al subir.') });
+              updateCurrentProject({ ideLogs: ideLogs + (data.status === 'success' ? '\n✅ ¡Subida a tu Drive completada!' : '\n❌ Error al subir.') });
             } else {
-              updateCurrentProject({ ideLogs: ideLogs + '
-❌ Permiso de Drive denegado.' });
+              updateCurrentProject({ ideLogs: ideLogs + '\n❌ Permiso de Drive denegado.' });
             }
           },
         });
