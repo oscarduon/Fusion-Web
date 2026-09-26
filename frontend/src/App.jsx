@@ -64,6 +64,11 @@ export default function App() {
             setUser(d.user);
             const ds = await apiFetch('/api/drive/status').then(r => r.json()).catch(() => ({}));
             setDriveOwner(!!ds.owner);
+            const pr = await apiFetch('/api/projects').then(r => r.json()).catch(() => ({ projects: [] }));
+            setProjects(pr.projects || []);
+            setCurrentProjectId(null);
+            localStorage.removeItem('react_projects');
+            localStorage.removeItem('react_current_project');
           } else {
             localStorage.removeItem('fusion_token');
             tokenRef.current = '';
@@ -110,7 +115,9 @@ export default function App() {
         // load server projects
         const pr = await apiFetch('/api/projects').then(r => r.json()).catch(() => ({ projects: [] }));
         setProjects(pr.projects || []);
+        setCurrentProjectId(null);
         localStorage.removeItem('react_projects');
+        localStorage.removeItem('react_current_project');
       } else {
         alert(d.detail || 'No se pudo iniciar sesión con Google.');
       }
@@ -372,7 +379,7 @@ export default function App() {
     const txt = inputText.trim();
     let targetProjectId = currentProjectId;
 
-    if (!targetProjectId) {
+    if (!targetProjectId || !projects.some(p => p.id === targetProjectId)) {
       targetProjectId = generateId();
       const newProj = {
         id: targetProjectId, name: txt.slice(0, 20) + (txt.length > 20 ? '...' : ''),
