@@ -493,7 +493,7 @@ export default function App() {
       </div>
       
               <button 
-          onClick={() => {if(chatEndRef.current) chatEndRef.current.scrollTo({ top: chatEndRef.current.scrollHeight, behavior: 'smooth' })}} 
+          onClick={() => {if(chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' })}} 
           className="absolute bottom-28 right-8 bg-blue-600 hover:bg-blue-500 text-white rounded-full p-3 shadow-2xl transition-all opacity-70 hover:opacity-100 z-50 flex items-center justify-center animate-bounce"
           title="Bajar al final"
         >
