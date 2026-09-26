@@ -4,19 +4,23 @@ import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 const MODEL_CATEGORIES = [
   {
-    category: "Groq (Open Weights)",
+    category: "Groq (Cerebro Rápido)",
     models: [
-      { id: 'openai/gpt-oss-120b', name: 'GPT-OSS 120B', status: 'ok' },
-      { id: 'llama3-70b-8192', name: 'Llama 3 70B', status: 'ok' },
-      { id: 'gemma2-9b-it', name: 'Gemma 2 9B (Google)', status: 'ok' },
-      { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B', status: 'warn' }
+      { id: 'llama-3.1-70b-versatile', name: 'Llama 3.1 70B', status: 'ok' },
+      { id: 'gemma2-9b-it', name: 'Gemma 2 9B (Google)', status: 'ok' }
+    ]
+  },
+  {
+    category: "DeepSeek (Cerebro Analítico Profundo)",
+    models: [
+      { id: 'deepseek-chat', name: 'DeepSeek V3 (Chat)', status: 'ok' },
+      { id: 'deepseek-coder', name: 'DeepSeek Coder V2', status: 'ok' }
     ]
   },
   {
     category: "Modelos Privados",
     models: [
-      { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Próximamente)', disabled: true },
-      { id: 'grok-beta', name: 'Grok 2 (Próximamente)', disabled: true }
+      { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Próximamente)', disabled: true }
     ]
   }
 ];

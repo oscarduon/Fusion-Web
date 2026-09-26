@@ -7,11 +7,19 @@ import subprocess
 import time
 import glob
 import base64
-from groq import Groq
+from openai import AsyncOpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
-client = Groq(api_key=os.getenv('GROQ_API_KEY'))
+# Initialize clients for different providers
+groq_client = AsyncOpenAI(
+    api_key=os.getenv('GROQ_API_KEY'),
+    base_url="https://api.groq.com/openai/v1"
+)
+deepseek_client = AsyncOpenAI(
+    api_key=os.getenv('DEEPSEEK_API_KEY'),
+    base_url="https://api.deepseek.com"
+)
 
 app = FastAPI()
 
@@ -88,8 +96,11 @@ if os.path.exists(fusion_db_path):
         FUSION_DB = json.load(f)
 
 @app.post("/api/chat")
-async def chat_endpoint(text: str = Form(...), model: str = Form("openai/gpt-oss-120b")):
+async def chat_endpoint(text: str = Form(...), model: str = Form("llama3-70b-8192")):
     prompt_text = text
+    
+    # Select the right client based on the model prefix
+    active_client = deepseek_client if "deepseek" in model.lower() else groq_client
     
     # 1. THE LIBRARIAN AGENT (Router)
     # Ask the LLM to identify which FUSION commands are needed for this task.
@@ -104,12 +115,12 @@ async def chat_endpoint(text: str = Form(...), model: str = Form("openai/gpt-oss
     )
     
     try:
-        router_chat = client.chat.completions.create(
+        router_chat = await active_client.chat.completions.create(
             messages=[
                 {"role": "system", "content": router_sys},
                 {"role": "user", "content": prompt_text}
             ],
-            model="openai/gpt-oss-120b", 
+            model=model, 
             temperature=0.0
         )
         commands_needed_str = router_chat.choices[0].message.content.strip()
@@ -157,9 +168,9 @@ async def chat_endpoint(text: str = Form(...), model: str = Form("openai/gpt-oss
             "NO SE NECESITAN COMANDOS ESPECÍFICOS PARA ESTA TAREA, ACTÚA COMO UN ASISTENTE NORMAL.\n"
         )
         
-    chat = client.chat.completions.create(
+    chat = await active_client.chat.completions.create(
         messages=[{"role": "system", "content": dynamic_sys_prompt}, {"role": "user", "content": prompt_text}],
-        model="openai/gpt-oss-120b", 
+        model=model, 
         temperature=0.3,
     )
     reply = chat.choices[0].message.content.strip()
@@ -176,7 +187,7 @@ async def transcribe_audio(audio: UploadFile = File(...)):
         
         # Transcribe with Groq Whisper
         with open(temp_path, "rb") as file:
-            transcription = client.audio.transcriptions.create(
+            transcription = await groq_client.audio.transcriptions.create(
                 file=(audio.filename, file.read()),
                 model="whisper-large-v3",
                 prompt="El usuario está hablando sobre LiDAR y topografía en español.",
