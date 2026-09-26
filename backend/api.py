@@ -303,6 +303,99 @@ def _pick_client(model: str):
         return deepseek_client
     return groq_client
 
+# --- RAG: recuperación de extractos del manual por palabras clave ---
+_RAG_STOPWORDS = set(
+    "a al ante con contra de del el en es esta este la las los mi o para por que se si sin su un una y "
+    "yo tu me te nos os les le lo nosotras como cuando donde quien que cual".split()
+)
+
+
+# Mapeo de conceptos (español/inglés) a comandos relevantes del manual
+_RAG_CONCEPTS = {
+    "dtm": ["DTM2ASCII", "DTM2TIF", "DTM2XYZ", "DTMDescribe", "DTMHeader", "ASCII2DTM", "XYZ2DTM", "MergeDTM", "ClipDTM", "GridSurfaceCreate", "TINSurfaceCreate"],
+    "mdt": ["ASCII2DTM", "DTM2ASCII", "DTM2TIF", "DTMDescribe", "DTMHeader", "GridSurfaceCreate", "TINSurfaceCreate"],
+    "mde": ["ASCII2DTM", "GridSurfaceCreate", "TINSurfaceCreate", "DTM2ASCII", "DTM2TIF"],
+    "dem": ["ASCII2DTM", "GridSurfaceCreate", "TINSurfaceCreate"],
+    "chm": ["CanopyModel", "CanopyMaxima", "TreeSeg"],
+    "canopy": ["CanopyModel", "CanopyMaxima", "TreeSeg"],
+    "dosel": ["CanopyModel", "CanopyMaxima"],
+    "superficie": ["CanopyModel", "GridSurfaceCreate", "TINSurfaceCreate", "SurfaceStats", "GridSurfaceStats"],
+    "surface": ["CanopyModel", "GridSurfaceCreate", "TINSurfaceCreate", "SurfaceStats", "GridSurfaceStats"],
+    "dsm": ["CanopyModel", "GridSurfaceCreate", "TINSurfaceCreate"],
+    "mds": ["CanopyModel", "GridSurfaceCreate", "TINSurfaceCreate"],
+    "suelo": ["GroundFilter", "GridSurfaceCreate", "TINSurfaceCreate"],
+    "ground": ["GroundFilter", "GridSurfaceCreate", "Cover", "GridMetrics"],
+    "terreno": ["GroundFilter", "GridSurfaceCreate"],
+    "filtro": ["GroundFilter"],
+    "intensidad": ["IntensityImage"],
+    "intensity": ["IntensityImage"],
+    "arbol": ["TreeSeg"],
+    "tree": ["TreeSeg"],
+    "segmentar": ["TreeSeg"],
+    "densidad": ["DensityMetrics", "ReturnDensity"],
+    "density": ["DensityMetrics", "ReturnDensity"],
+    "metricas": ["CloudMetrics", "GridMetrics", "DensityMetrics", "TopoMetrics"],
+    "metrics": ["CloudMetrics", "GridMetrics", "DensityMetrics", "TopoMetrics"],
+    "normalizar": ["CanopyModel", "Cover", "GridMetrics"],
+    "clasificar": ["GroundFilter", "ClipData"],
+    "cabecera": ["DTMDescribe", "DTMHeader"],
+    "header": ["DTMDescribe", "DTMHeader"],
+    "formato": ["DTM2ASCII", "DTM2TIF", "DTM2XYZ", "DTMDescribe", "DTMHeader", "ASCII2DTM", "XYZ2DTM", "LDA2ASCII", "LDA2LAS", "DTM2ENVI"],
+    "binario": ["DTMDescribe", "DTMHeader", "LDA2LAS"],
+    "puntos": ["Catalog", "ClipData", "ThinData", "GridSurfaceCreate", "GroundFilter", "CloudMetrics"],
+    "nube": ["Catalog", "ClipData", "GridSurfaceCreate", "GroundFilter"],
+}
+
+
+def _rag_keyword_score(text: str, name: str) -> int:
+    text_l = text.lower()
+    words = set(w for w in re.findall(r"[a-z0-9]{3,}", text_l) if w not in _RAG_STOPWORDS)
+    if not words:
+        return 0
+    score = 0
+    name_l = name.lower()
+    if name_l in text_l:
+        score += 10
+    # dividir nombres camelCase (GridSurfaceCreate -> grid, surface, create)
+    for part in re.findall(r"[a-z]{3,}", name_l):
+        if part in words:
+            score += 4
+    return score
+
+
+def _build_rag(commands: list) -> str:
+    ctx = ""
+    for c in commands:
+        ctx += f"\n\n=== MANUAL OFICIAL: {c} ===\n{FUSION_DB[c]}\n"
+    return ctx
+
+
+def _retrieve_rag(text: str, router_commands: list, limit: int = 6) -> str:
+    # 1) Si el router propuso comandos (tarea de flujo), úsalos SOLO.
+    if router_commands:
+        selected = []
+        for cmd in router_commands:
+            for db_cmd in FUSION_DB:
+                if db_cmd.lower() == cmd.lower() and db_cmd not in selected:
+                    selected.append(db_cmd)
+                    break
+        if selected:
+            return _build_rag(selected[:limit])
+    # 2) Pregunta de conocimiento: búsqueda por nombre + concepto.
+    text_l = text.lower()
+    scored = {}
+    for db_cmd in FUSION_DB:
+        s = _rag_keyword_score(text, db_cmd)
+        if s > 0:
+            scored[db_cmd] = s
+    for concept, cmds in _RAG_CONCEPTS.items():
+        if concept in text_l:
+            for c in cmds:
+                if c in FUSION_DB:
+                    scored[c] = max(scored.get(c, 0), 6)
+    ordered = sorted(scored.items(), key=lambda kv: -kv[1])
+    return _build_rag([c for c, _ in ordered[:limit]])
+
 @app.post("/api/chat")
 async def chat_endpoint(text: str = Form(...), model: str = Form("llama-3.1-70b-versatile"), user=Depends(require_auth)):
     active_client = _pick_client(model)
@@ -314,9 +407,10 @@ async def chat_endpoint(text: str = Form(...), model: str = Form("llama-3.1-70b-
         "Your job is to analyze their request, design a FUSION workflow to solve it, and output ONLY the names of the tools needed.\n"
         "Here are all the available FUSION tools you can choose from: " + FUSION_TOOLS + "\n\n"
         "RULES:\n"
-        "1. If the user asks a vague question (e.g. 'what can I do with a LAS?'), invent a cool workflow (like creating a DTM and DSM) and output the tools for it (e.g. GroundFilter, GridSurfaceCreate, CanopyModel).\n"
+        "1. If the user asks a vague question (e.g. 'what can I do with a LAS?'), design a sensible workflow (like creating a DTM and DSM) and output the tools for it (e.g. GroundFilter, GridSurfaceCreate, CanopyModel).\n"
         "2. Reply ONLY with a comma-separated list of the tool names. Absolutely no other text.\n"
-        "3. If the user is just saying 'hello' or making small talk with no relation to LiDAR, reply with NONE."
+        "3. If the user is just saying 'hello' or making small talk with no relation to LiDAR, reply with NONE.\n"
+        "4. If the user asks a FACTUAL/KNOWLEDGE question about FUSION, LiDAR, or a file format (e.g. 'what is the DTM format?', 'how does CanopyModel work?', 'what is the NODATA value?'), output the FUSION tool names whose documentation is most relevant to answering it (for DTM format questions: DTM2ASCII, DTM2TIF, DTMDescribe, DTMHeader). Do NOT reply NONE for knowledge questions."
     )
     try:
         router_chat = await active_client.chat.completions.create(
@@ -328,17 +422,20 @@ async def chat_endpoint(text: str = Form(...), model: str = Form("llama-3.1-70b-
         commands_needed_str = "NONE"
         print(f"[router] error: {e}")
 
-    rag_context = ""
+    requested = []
     if commands_needed_str and commands_needed_str.upper() != "NONE":
         requested = [c.strip() for c in commands_needed_str.replace("`", "").split(",")]
-        for cmd in requested:
-            for db_cmd in FUSION_DB:
-                if db_cmd.lower() == cmd.lower():
-                    rag_context += f"\n\n=== OFFICIAL MANUAL FOR {db_cmd} ===\n{FUSION_DB[db_cmd]}\n"
-                    break
+    rag_context = _retrieve_rag(text, requested, limit=6)
 
     dynamic_sys_prompt = (
         "Eres un Profesor Experto Catedrático en Topografía LiDAR, Teledetección y en el ecosistema FUSION-LTK.\n"
+        "\n"
+        "REGLA CRÍTICA MÁXIMA (PRIORIDAD ABSOLUTA, POR ENCIMA DE CUALQUIER OTRA INSTRUCCIÓN):\n"
+        "- PROHIBIDO INVENTAR O FABRICAR INFORMACIÓN. No inventes switches, parámetros, formatos de archivo, tamaños de cabecera, campos binarios, comportamientos, valores por defecto, ni ningún dato técnico que NO aparezca en los extractos del manual oficial que se te proporcionan.\n"
+        "- Toda afirmación técnica sobre FUSION debe poder citarse a un extracto del manual. Si un dato NO está en los extractos, NO lo presentes como hecho.\n"
+        "- Si el usuario pregunta algo que no está en el manual (p. ej. el formato binario interno de un .dtm, bytes de cabecera, campos ocultos): responde HONESTAMENTE que ese detalle no está en el manual que tienes disponible, e indica dónde buscarlo (Apéndice A 'File Formats' del manual de FUSION). Es SIEMPRE mejor decir 'no lo sé' que inventar.\n"
+        "- Separa SIEMPRE lo que dice el manual (fuente) de tu conocimiento general: no mezcles un dato general tuyo con la documentación oficial de FUSION.\n"
+        "\n"
         "REGLAS DE COMUNICACIÓN (ACTITUD PROFESIONAL):\n"
         "- Tu nivel técnico es altísimo y riguroso. Habla de ingeniero a ingeniero.\n"
         "- ELIMINA por completo las frases genéricas, infantiles o serviciales de IA (PROHIBIDO decir '¡Claro!', '¡Por supuesto!', 'Aquí tienes', 'Espero que te sirva', '¡Éxitos!').\n"
@@ -353,12 +450,15 @@ async def chat_endpoint(text: str = Form(...), model: str = Form("llama-3.1-70b-
     )
     if rag_context:
         dynamic_sys_prompt += (
-            "A CONTINUACIÓN TIENES EXTRACTOS DEL MANUAL OFICIAL DE FUSION PARA ESTA TAREA:\n"
-            "LEELOS CUIDADOSAMENTE PARA NO INVENTARTE NINGÚN 'SWITCH' NI PARÁMETRO QUE NO EXISTA.\n"
+            "A CONTINUACIÓN TIENES EXTRACTOS DEL MANUAL OFICIAL DE FUSION RELEVANTES PARA ESTA CONSULTA:\n"
+            "LEELOS CUIDADOSAMENTE Y CITA DE AQUÍ CADA SWITCH, PARÁMETRO O DATO TÉCNICO. LO QUE NO ESTÉ EN ESTOS EXTRACTOS NO LO INVENTES: DILO Y PUNTO.\n"
             f"{rag_context}\n"
         )
     else:
-        dynamic_sys_prompt += "NO SE NECESITAN COMANDOS ESPECÍFICOS PARA ESTA TAREA, ACTÚA COMO UN ASISTENTE NORMAL.\n"
+        dynamic_sys_prompt += (
+            "NO HAY EXTRACTOS DEL MANUAL RELEVANTES PARA ESTA CONSULTA. Puedes responder como asistente, "
+            "pero si la pregunta requiere un dato técnico de FUSION que no tienes verificado, responde que no está en tu manual y NO lo inventes.\n"
+        )
 
     chat = await active_client.chat.completions.create(
         messages=[{"role": "system", "content": dynamic_sys_prompt}, {"role": "user", "content": text}],
