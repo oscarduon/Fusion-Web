@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+*.db
+
+# Secrets (never commit)
+.env
+backend/.env
+
+# Node
+node_modules/
+frontend/dist/
+
+# Local junk / generated / logs
+/uvicorn*.log
+/test.jpg
+/Catalog.csv
+/Catalog.html
+/index.html
