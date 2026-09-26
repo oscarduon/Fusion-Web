@@ -531,7 +531,7 @@ async def chat_endpoint(text: str = Form(...), model: str = Form("llama-3.1-70b-
     try:
         router_chat = await groq_client.chat.completions.create(
             messages=[{"role": "system", "content": router_sys}, {"role": "user", "content": text}],
-            model="llama-3.1-8b-instant", temperature=0.0,
+            model="openai/gpt-oss-20b", temperature=0.0,
         )
         commands_needed_str = (router_chat.choices[0].message.content or "").strip()
     except Exception as e:
