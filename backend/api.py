@@ -8,16 +8,24 @@ import time
 import glob
 import base64
 from openai import AsyncOpenAI
+import os
 from dotenv import load_dotenv
 
-load_dotenv()
+# Try both locations
+if os.path.exists(os.path.join(os.path.dirname(__file__), ".env")):
+    load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+elif os.path.exists(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")):
+    load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
+else:
+    load_dotenv()
+
 # Initialize clients for different providers
 groq_client = AsyncOpenAI(
-    api_key=os.getenv('GROQ_API_KEY'),
+    api_key=os.getenv('GROQ_API_KEY', 'dummy'),
     base_url="https://api.groq.com/openai/v1"
 )
 deepseek_client = AsyncOpenAI(
-    api_key=os.getenv('DEEPSEEK_API_KEY'),
+    api_key=os.getenv('DEEPSEEK_API_KEY', 'dummy'),
     base_url="https://api.deepseek.com"
 )
 
