@@ -492,7 +492,14 @@ export default function App() {
         <div ref={chatEndRef} className="h-4 shrink-0" />
       </div>
       
-      <div className="shrink-0 p-4 md:p-6 bg-neutral-950 flex justify-center z-10 border-t border-neutral-900/50 relative">
+              <button 
+          onClick={() => {if(chatEndRef.current) chatEndRef.current.scrollTo({ top: chatEndRef.current.scrollHeight, behavior: 'smooth' })}} 
+          className="absolute bottom-28 right-8 bg-blue-600 hover:bg-blue-500 text-white rounded-full p-3 shadow-2xl transition-all opacity-70 hover:opacity-100 z-50 flex items-center justify-center animate-bounce"
+          title="Bajar al final"
+        >
+          <ArrowDown size={24} />
+        </button>
+        <div className="shrink-0 p-4 md:p-6 bg-neutral-950 flex justify-center z-10 border-t border-neutral-900/50 relative">
         <div className="w-full max-w-3xl flex flex-col gap-2 relative">
           <div className="flex items-end bg-[#1e1e1f] p-2 rounded-[32px] shadow-2xl focus-within:bg-[#252526] transition-all border border-neutral-800">
             <button className="p-3 text-neutral-400 hover:text-white rounded-full transition-colors shrink-0">
