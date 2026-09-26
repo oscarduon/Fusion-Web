@@ -120,6 +120,7 @@ export default function App() {
 
   const [menuOpenProjectId, setMenuOpenProjectId] = useState(null);
   const chatEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
 
   useEffect(() => {
     if (window.innerWidth >= 768) setSidebarOpen(true);
@@ -132,8 +133,10 @@ export default function App() {
   }, [projects, currentProjectId]);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatHistory, activeTab]);
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
+    }
+  }, [chatHistory, activeTab, isTyping]);
 
   useEffect(() => {
     const handleClick = () => setMenuOpenProjectId(null);
@@ -476,7 +479,7 @@ export default function App() {
         <div className="w-10"></div> {/* Spacer */}
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 hide-scrollbar flex flex-col min-h-0 pt-16 md:pt-20">
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 hide-scrollbar flex flex-col min-h-0 pt-16 md:pt-20 relative" ref={chatContainerRef}>
         {chatHistory.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-neutral-500 space-y-6">
             <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-2xl opacity-80">
@@ -493,7 +496,7 @@ export default function App() {
       </div>
       
               <button 
-          onClick={() => {if(chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' })}} 
+          onClick={() => {if(chatContainerRef.current) chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' })}} 
           className="absolute bottom-28 right-8 bg-blue-600 hover:bg-blue-500 text-white rounded-full p-3 shadow-2xl transition-all opacity-70 hover:opacity-100 z-50 flex items-center justify-center animate-bounce"
           title="Bajar al final"
         >
