@@ -94,10 +94,13 @@ async def chat_endpoint(text: str = Form(...), model: str = Form("openai/gpt-oss
     # 1. THE LIBRARIAN AGENT (Router)
     # Ask the LLM to identify which FUSION commands are needed for this task.
     router_sys = (
-        "You are an expert FUSION LiDAR routing agent. The available commands are: " + 
-        ", ".join(list(FUSION_DB.keys())) + 
-        "\nBased on the user's request, reply ONLY with a comma-separated list of the command names needed to solve it. (Hint: MDT/DTM = GridSurfaceCreate & GroundFilter). "
-        "Do not include any other text. If no specific command is needed, reply with NONE."
+        "You are the Master Planner for FUSION LiDAR tasks. The user will give you a request (sometimes specific, sometimes vague like 'recommend an operation').\n"
+        "Your job is to analyze their request, design a FUSION workflow to solve it, and output ONLY the names of the tools needed.\n"
+        "Here are all the available FUSION tools you can choose from: " + ", ".join(list(FUSION_DB.keys())) + "\n\n"
+        "RULES:\n"
+        "1. If the user asks a vague question (e.g. 'what can I do with a LAS?'), invent a cool workflow (like creating a DTM and DSM) and output the tools for it (e.g. GroundFilter, GridSurfaceCreate, CanopyModel).\n"
+        "2. Reply ONLY with a comma-separated list of the tool names. Absolutely no other text.\n"
+        "3. If the user is just saying 'hello' or making small talk with no relation to LiDAR, reply with NONE."
     )
     
     try:
