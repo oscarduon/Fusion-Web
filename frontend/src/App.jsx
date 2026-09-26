@@ -84,6 +84,7 @@ export default function App() {
   };
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inputText, setInputText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const [selectedModel, setSelectedModel] = useState(MODEL_CATEGORIES[0].models[0]);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   
@@ -294,6 +295,7 @@ export default function App() {
     }
 
     setInputText('');
+    setIsTyping(true);
     
     try {
       const formData = new FormData();
@@ -324,6 +326,8 @@ export default function App() {
       setProjects(prev => prev.map(p => p.id === targetProjectId ? {
         ...p, chatHistory: [...p.chatHistory, { text: `Error: ${e}`, isUser: false }]
       } : p));
+    } finally {
+      setIsTyping(false);
     }
   };
 
