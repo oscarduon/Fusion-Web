@@ -342,6 +342,46 @@ export default function App() {
     setMenuOpenProjectId(null);
   };
 
+  const handleExportTxt = (id, e) => {
+    e.stopPropagation();
+    const p = projects.find(x => x.id === id);
+    if (!p) return;
+    const lines = [];
+    lines.push('LiDAR Fusion — Conversación');
+    lines.push(`Proyecto: ${p.name || 'Sin nombre'}`);
+    lines.push(`Exportado: ${new Date().toLocaleString('es-ES')}`);
+    lines.push('='.repeat(60));
+    lines.push('');
+    (p.chatHistory || []).forEach((m) => {
+      if (m.isUser) {
+        lines.push('TÚ:');
+        lines.push(m.text || '');
+      } else {
+        lines.push(`IA${m.modelName ? ' (' + m.modelName + ')' : ''}:`);
+        lines.push(m.text || '');
+      }
+      lines.push('');
+    });
+    const logs = (p.ideLogs && typeof p.ideLogs === 'string' && p.ideLogs.trim()) ? p.ideLogs : '';
+    if (logs) {
+      lines.push('='.repeat(60));
+      lines.push('CONSOLA DE EJECUCIÓN');
+      lines.push('='.repeat(60));
+      lines.push(logs);
+    }
+    const content = lines.join('\n');
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${((p.name || 'chat').replace(/[^\w\-]+/g, '_').slice(0, 60)) || 'chat'}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setMenuOpenProjectId(null);
+  };
+
   const executeCommand = async (cmd, targetProjectId) => {
     setProjects(prev => prev.map(p => {
       if (p.id === targetProjectId) {
@@ -665,6 +705,7 @@ export default function App() {
         <div className="absolute right-0 top-full mt-1 w-40 bg-neutral-800 border border-neutral-700 rounded-xl shadow-2xl overflow-hidden z-50 py-1">
           <button onClick={(e) => handleRenameProject(p.id, e)} className="w-full px-3 py-2 text-left text-sm text-neutral-200 hover:bg-neutral-700 flex items-center gap-2"><Edit2 size={14} /> Renombrar</button>
           <button onClick={(e) => handleTogglePin(p.id, e)} className="w-full px-3 py-2 text-left text-sm text-neutral-200 hover:bg-neutral-700 flex items-center gap-2">{p.isPinned ? <PinOff size={14} /> : <Pin size={14} />} {p.isPinned ? 'Desfijar' : 'Fijar'}</button>
+          <button onClick={(e) => handleExportTxt(p.id, e)} className="w-full px-3 py-2 text-left text-sm text-neutral-200 hover:bg-neutral-700 flex items-center gap-2"><FileText size={14} /> Exportar TXT</button>
           <div className="h-px bg-neutral-700 my-1"></div>
           <button onClick={(e) => handleDeleteProject(p.id, e)} className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-neutral-700 flex items-center gap-2"><Trash2 size={14} /> Eliminar</button>
         </div>
