@@ -6,8 +6,8 @@ const MODEL_CATEGORIES = [
   {
     category: "Groq (Cerebro Rápido)",
     models: [
-      { id: 'llama-3.1-70b-versatile', name: 'Llama 3.1 70B', status: 'ok' },
-      { id: 'gemma2-9b-it', name: 'Gemma 2 9B (Google)', status: 'ok' }
+      { id: 'openai/gpt-oss-120b', name: 'GPT-OSS 120B (Groq)', status: 'ok' },
+      { id: 'openai/gpt-oss-20b', name: 'GPT-OSS 20B (Rápido)', status: 'ok' }
     ]
   },
   {
