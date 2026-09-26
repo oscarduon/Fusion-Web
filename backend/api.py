@@ -186,6 +186,13 @@ if os.path.exists(_fusion_db_path):
 
 FUSION_TOOLS = ", ".join(FUSION_DB.keys())
 
+# Base de conocimiento de formatos de archivo (Apéndice A del manual)
+FUSION_FORMATS = {}
+_formats_path = os.path.join(BACKEND_DIR, "fusion_formats.json")
+if os.path.exists(_formats_path):
+    with open(_formats_path, "r", encoding="utf-8") as f:
+        FUSION_FORMATS = json.load(f)
+
 @app.get("/api/config")
 async def get_config():
     return {"google_client_id": GOOGLE_CLIENT_ID, "auth_required": AUTH_REQUIRED}
@@ -347,6 +354,41 @@ _RAG_CONCEPTS = {
 }
 
 
+# --- Formato de archivo (Apéndice A): disparadores ---
+_FORMAT_TRIGGERS = {
+    "dtm": ["dtm", "mdt", "mde", "dem", "terrain", "surface model", "elevation model", "terrain model"],
+    "lda": ["lda", "lidarbin"],
+    "ldx": ["ldx", "ldi", "index file", "data index", "indice"],
+    "las": [".las", "laz", "las file", "las format", "archivo las"],
+    "ascii": ["ascii", "text file", "archivo de texto"],
+    "xyz": ["xyz"],
+    "tree": ["tree file", "arbol", "tree data"],
+    "hotspot": ["hotspot", "hst"],
+}
+_FORMAT_QUERY_WORDS = {
+    "formato", "format", "cabecera", "header", "binario", "binary", "bytes", "byte",
+    "offset", "estructura", "structure", "especificacion", "specification", "spec",
+    "firma", "signature", "endian", "endianness", "parsear", "parse", "campo", "field",
+    "registro", "record", "almacenamiento", "storage", "interno", "internamente",
+    "tamano", "size",
+}
+
+
+def _format_rag(text: str, limit: int = 2) -> str:
+    text_l = text.lower()
+    words = set(re.findall(r"[a-z]{3,}", text_l))
+    if not (words & _FORMAT_QUERY_WORDS):
+        return ""
+    matches = []
+    for fkey, triggers in _FORMAT_TRIGGERS.items():
+        if any(t in text_l for t in triggers) and fkey in FUSION_FORMATS:
+            matches.append(fkey)
+    ctx = ""
+    for fkey in matches[:limit]:
+        ctx += f"\n\n=== MANUAL OFICIAL - FORMATO {fkey.upper()} ===\n{FUSION_FORMATS[fkey]}\n"
+    return ctx
+
+
 def _rag_keyword_score(text: str, name: str) -> int:
     text_l = text.lower()
     words = set(w for w in re.findall(r"[a-z0-9]{3,}", text_l) if w not in _RAG_STOPWORDS)
@@ -371,7 +413,12 @@ def _build_rag(commands: list) -> str:
 
 
 def _retrieve_rag(text: str, router_commands: list, limit: int = 6) -> str:
-    # 1) Si el router propuso comandos (tarea de flujo), úsalos SOLO.
+    parts = []
+    # 1) Formato de archivo (Apéndice A) si la consulta lo pide.
+    fmt = _format_rag(text)
+    if fmt:
+        parts.append(fmt)
+    # 2) Comandos: si el router propuso (flujo), úsalos SOLO.
     if router_commands:
         selected = []
         for cmd in router_commands:
@@ -380,21 +427,25 @@ def _retrieve_rag(text: str, router_commands: list, limit: int = 6) -> str:
                     selected.append(db_cmd)
                     break
         if selected:
-            return _build_rag(selected[:limit])
-    # 2) Pregunta de conocimiento: búsqueda por nombre + concepto.
-    text_l = text.lower()
-    scored = {}
-    for db_cmd in FUSION_DB:
-        s = _rag_keyword_score(text, db_cmd)
-        if s > 0:
-            scored[db_cmd] = s
-    for concept, cmds in _RAG_CONCEPTS.items():
-        if concept in text_l:
-            for c in cmds:
-                if c in FUSION_DB:
-                    scored[c] = max(scored.get(c, 0), 6)
-    ordered = sorted(scored.items(), key=lambda kv: -kv[1])
-    return _build_rag([c for c, _ in ordered[:limit]])
+            parts.append(_build_rag(selected[:limit]))
+    else:
+        # Pregunta de conocimiento: búsqueda por nombre + concepto.
+        text_l = text.lower()
+        scored = {}
+        for db_cmd in FUSION_DB:
+            s = _rag_keyword_score(text, db_cmd)
+            if s > 0:
+                scored[db_cmd] = s
+        for concept, cmds in _RAG_CONCEPTS.items():
+            if concept in text_l:
+                for c in cmds:
+                    if c in FUSION_DB:
+                        scored[c] = max(scored.get(c, 0), 6)
+        ordered = sorted(scored.items(), key=lambda kv: -kv[1])
+        ctx = _build_rag([c for c, _ in ordered[:limit]])
+        if ctx:
+            parts.append(ctx)
+    return "\n".join(parts)
 
 @app.post("/api/chat")
 async def chat_endpoint(text: str = Form(...), model: str = Form("llama-3.1-70b-versatile"), user=Depends(require_auth)):
