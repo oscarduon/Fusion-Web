@@ -359,7 +359,8 @@ _FORMAT_TRIGGERS = {
     "dtm": ["dtm", "mdt", "mde", "dem", "terrain", "surface model", "elevation model", "terrain model"],
     "lda": ["lda", "lidarbin"],
     "ldx": ["ldx", "ldi", "index file", "data index", "indice"],
-    "las": [".las", "laz", "las file", "las format", "archivo las"],
+    "las": [".las", "laz", "las file", "las format", "archivo las", "formato las"],
+    "las_asprs": [".las", "laz", "las file", "las format", "archivo las", "formato las", "point format", "pdrf", "record format", "record length", "header size", "las 1.4", "little endian", "asprs", "return number", "classification", "scan angle", "point data record"],
     "ascii": ["ascii", "text file", "archivo de texto"],
     "xyz": ["xyz"],
     "tree": ["tree file", "arbol", "tree data"],
@@ -370,11 +371,11 @@ _FORMAT_QUERY_WORDS = {
     "offset", "estructura", "structure", "especificacion", "specification", "spec",
     "firma", "signature", "endian", "endianness", "parsear", "parse", "campo", "field",
     "registro", "record", "almacenamiento", "storage", "interno", "internamente",
-    "tamano", "size",
+    "tamano", "size", "layout", "pdrf", "clasificacion", "classification", "return",
 }
 
 
-def _format_rag(text: str, limit: int = 2) -> str:
+def _format_rag(text: str, limit: int = 3) -> str:
     text_l = text.lower()
     words = set(re.findall(r"[a-z]{3,}", text_l))
     if not (words & _FORMAT_QUERY_WORDS):
@@ -482,9 +483,9 @@ async def chat_endpoint(text: str = Form(...), model: str = Form("llama-3.1-70b-
         "Eres un Profesor Experto Catedrático en Topografía LiDAR, Teledetección y en el ecosistema FUSION-LTK.\n"
         "\n"
         "REGLA CRÍTICA MÁXIMA (PRIORIDAD ABSOLUTA, POR ENCIMA DE CUALQUIER OTRA INSTRUCCIÓN):\n"
-        "- PROHIBIDO INVENTAR O FABRICAR INFORMACIÓN. No inventes switches, parámetros, formatos de archivo, tamaños de cabecera, campos binarios, comportamientos, valores por defecto, ni ningún dato técnico que NO aparezca en los extractos del manual oficial que se te proporcionan.\n"
-        "- Toda afirmación técnica sobre FUSION debe poder citarse a un extracto del manual. Si un dato NO está en los extractos, NO lo presentes como hecho.\n"
-        "- Si el usuario pregunta algo que no está en el manual (p. ej. el formato binario interno de un .dtm, bytes de cabecera, campos ocultos): responde HONESTAMENTE que ese detalle no está en el manual que tienes disponible, e indica dónde buscarlo (Apéndice A 'File Formats' del manual de FUSION). Es SIEMPRE mejor decir 'no lo sé' que inventar.\n"
+        "- PROHIBIDO INVENTAR O FABRICAR INFORMACIÓN. No inventes switches, parámetros, formatos de archivo, tamaños de cabecera, campos binarios, comportamientos, valores por defecto, ni ningún dato técnico que NO aparezca en los extractos de las fuentes oficiales que se te proporcionan (manual de FUSION + especificación ASPRS LAS 1.4).\n"
+        "- Toda afirmación técnica debe poder citarse a un extracto proporcionado (manual de FUSION para comandos y formato DTM; especificación ASPRS LAS 1.4 R15 para el layout binario del .LAS). Si un dato NO está en los extractos, NO lo presentes como hecho.\n"
+        "- Si el usuario pregunta algo que no está en el manual (p. ej. el formato binario interno de un .dtm, bytes de cabecera, campos ocultos): responde HONESTAMENTE que ese detalle no está en las fuentes que tienes, e indica dónde buscarlo (Apéndice A 'File Formats' del manual de FUSION, o la especificación ASPRS LAS 1.4). Es SIEMPRE mejor decir 'no lo sé' que inventar.\n"
         "- Separa SIEMPRE lo que dice el manual (fuente) de tu conocimiento general: no mezcles un dato general tuyo con la documentación oficial de FUSION.\n"
         "\n"
         "REGLAS DE COMUNICACIÓN (ACTITUD PROFESIONAL):\n"
@@ -501,7 +502,7 @@ async def chat_endpoint(text: str = Form(...), model: str = Form("llama-3.1-70b-
     )
     if rag_context:
         dynamic_sys_prompt += (
-            "A CONTINUACIÓN TIENES EXTRACTOS DEL MANUAL OFICIAL DE FUSION RELEVANTES PARA ESTA CONSULTA:\n"
+            "A CONTINUACIÓN TIENES EXTRACTOS DE LAS FUENTES OFICIALES (MANUAL DE FUSION + ESPECIFICACIÓN ASPRS LAS 1.4) RELEVANTES PARA ESTA CONSULTA:\n"
             "LEELOS CUIDADOSAMENTE Y CITA DE AQUÍ CADA SWITCH, PARÁMETRO O DATO TÉCNICO. LO QUE NO ESTÉ EN ESTOS EXTRACTOS NO LO INVENTES: DILO Y PUNTO.\n"
             f"{rag_context}\n"
         )
