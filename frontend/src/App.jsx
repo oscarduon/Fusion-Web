@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
-import { Menu, Terminal, MessageSquare, Send, X, HardDrive, FileText, Download, Play, ChevronUp, ChevronDown, Check, AlertTriangle, Plus, History, Settings, Map, MoreVertical, Edit2, Trash2, Pin, PinOff, Mic, MicOff, Zap } from 'lucide-react';
+import { ArrowDown, Menu, Terminal, MessageSquare, Send, X, HardDrive, FileText, Download, Play, ChevronUp, ChevronDown, Check, AlertTriangle, Plus, History, Settings, Map, MoreVertical, Edit2, Trash2, Pin, PinOff, Mic, MicOff, Zap } from 'lucide-react';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 const MODEL_CATEGORIES = [
@@ -685,7 +685,21 @@ export default function App() {
                   </div>
                 )
               )
-            ) : selectedMedia.type === 'html' ? (
+                          ) : ['tif', 'tiff', 'dtm', 'img'].includes(selectedMedia.type) ? (
+                  selectedMedia.preview_b64 ? (
+                    <div className="w-full h-full flex items-center justify-center pointer-events-auto overflow-hidden bg-black rounded-xl border border-neutral-800">
+                      <TransformWrapper initialScale={1} minScale={0.1} maxScale={10} centerOnInit={true}>
+                        <TransformComponent wrapperStyle={{width: '100%', height: '100%'}} contentStyle={{width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+                          <img src={`data:image/jpeg;base64,${selectedMedia.preview_b64}`} className="max-w-full max-h-full object-contain shadow-2xl" alt="Preview" />
+                        </TransformComponent>
+                      </TransformWrapper>
+                    </div>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-neutral-900 rounded-xl border border-neutral-800 pointer-events-auto">
+                      <span className="text-neutral-500 text-sm">Cargando miniatura o formato no soportado...</span>
+                    </div>
+                  )
+              ) : selectedMedia.type === 'html' ? (
               <div className="w-full h-full bg-white rounded-xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col">
                 <div className="bg-neutral-800 text-neutral-300 text-xs px-4 py-2 border-b border-neutral-700 flex items-center justify-between">
                   <span>Visor Web</span>
