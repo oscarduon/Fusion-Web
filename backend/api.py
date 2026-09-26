@@ -136,10 +136,11 @@ async def chat_endpoint(text: str = Form(...), model: str = Form("openai/gpt-oss
         "- Ve directo al grano. Explica el razonamiento técnico (ej. por qué usar un filtro de mediana, problemas de resolución de celda, datums).\n"
         "- Anticípate a errores clásicos: si el usuario no te da la zona UTM, recuérdale con severidad que usar 'Zona 0' generará problemas de proyección en los TIFs (efecto Isla Null en ArcGIS).\n"
         "REGLAS TÉCNICAS Y SINTAXIS FUSION-LTK:\n"
+        "- Las ÚNICAS herramientas nativas de FUSION que existen y que puedes usar son: " + ", ".join(list(FUSION_DB.keys())) + ". NUNCA inventes nombres de .exe que no estén en esta lista.\n"
         "- FUSION usa extensiones propietarias (.dtm) y archivos (.las). Los ejecutables están en C:\\FUSION\\\n"
         "- NUNCA uses LAStools ni herramientas externas. Usa SOLO los ejecutables oficiales de FUSION.\n"
         "- Para generar un MDT a partir de un LAS: PRIMERO se filtra la nube con GroundFilter y LUEGO se rasteriza con GridSurfaceCreate.\n"
-        "- Si necesitas ejecutar VARIOS comandos para lograr un objetivo, ponlos TODOS JUNTOS EN UN ÚNICO BLOQUE DE CÓDIGO BASH (```bash), uno por línea. NO crees bloques separados.\n\n"
+        "- Agrupa todos los comandos a ejecutar en UN ÚNICO BLOQUE DE CÓDIGO BATCH (```bat), uno por línea. NO uses bloques separados. NO uses '#' para comentarios, en Batch los comentarios se escriben con 'REM '.\n\n"
     )
     
     if rag_context:
