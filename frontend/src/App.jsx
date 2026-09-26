@@ -536,12 +536,16 @@ export default function App() {
           onClick={() => {
             const container = document.getElementById('chat-scroll-container');
             if (container) {
-              container.scrollTop = container.scrollHeight + 5000;
+              // 1. Force instantaneous DOM scroll on container (Bypasses mobile 'smooth' bugs)
+              container.scrollTo({ top: container.scrollHeight, behavior: 'auto' });
             }
             const endRef = document.getElementById('chat-end-marker');
             if (endRef) {
-              endRef.scrollIntoView({ behavior: 'smooth', block: 'end' });
+              // 2. Standard block end, standard auto to avoid iOS/Android animation bugs
+              endRef.scrollIntoView({ behavior: 'auto', block: 'end' });
             }
+            // 3. Fallback for mobile if body took over
+            window.scrollTo(0, document.body.scrollHeight);
           }} 
           className="absolute bottom-24 right-4 md:bottom-28 md:right-8 bg-blue-600 hover:bg-blue-500 text-white rounded-full p-3 shadow-2xl transition-all z-[50] flex items-center justify-center animate-bounce border border-blue-400"
           title="Bajar al final"
