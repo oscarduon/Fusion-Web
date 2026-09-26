@@ -1,4 +1,11 @@
 # Arquitectura y Contexto del Proyecto: Fusion Web AI
+
+> **⚠️ INSTRUCCIÓN CRÍTICA PARA CUALQUIER IA ⚠️**
+> **TODO CAMBIO** realizado en este repositorio (modificaciones de código, nuevas características, arreglos de bugs) **DEBE** ser registrado obligatoriamente en la sección "10. CHANGELOG / REGISTRO DE CAMBIOS" al final de este documento. 
+> Formato obligatorio: `[DD/MM/YYYY - HH:MM] - Descripción detallada técnica del cambio y los archivos modificados`.
+> Este archivo actúa como la Memoria Central Compartida. Si haces un cambio y no lo registras aquí, romperás la cadena de memoria para las futuras IAs.
+
+
 **Documento de transferencia de conocimiento para humanos e IAs**
 
 ## 1. Visión General del Proyecto
@@ -53,3 +60,6 @@ Cualquier IA que retome el proyecto a partir de este punto debe revisar estas ta
 ## 9. Decisiones de Arquitectura Abiertas (Debates de Diseño)
 *   **Retención de Archivos (VPS Storage)**: Para evitar llenar los 100GB del disco del VPS, se implementará un `cronjob` (o lógica de base de datos) que elimine los archivos `.las` y rasters de la carpeta de trabajo del usuario tras **24 horas** de inactividad. Los chats y los metadatos de los proyectos se conservarán indefinidamente en Firebase, pero los binarios pesados serán efímeros.
 *   **Alternativa a Leica Infinity (RTKLIB)**: Se ha decidido explorar RTKLIB en línea de comandos como alternativa a herramientas comerciales pesadas (Leica) para la compensación de redes GNSS. RTKLIB es ultra ligero y puede integrarse en el backend Python para ejecutarse de manera autónoma cuando el usuario suba logs de observación RINEX o NMEA.
+
+## 10. CHANGELOG / REGISTRO DE CAMBIOS
+*   **[26/09/2026 - 16:50]** - Integración de API DeepSeek completada. Se ha sustituido la librería `groq` por la librería universal `openai` en `backend/api.py` para instanciar clientes asíncronos duales (`groq_client` y `deepseek_client`). Se modificó `frontend/src/App.jsx` para ofrecer los modelos DeepSeek V3 (Chat) y DeepSeek Coder V2 en el desplegable.

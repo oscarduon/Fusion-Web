@@ -10,7 +10,8 @@ import base64
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 
-load_dotenv()
+import os
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 # Initialize clients for different providers
 groq_client = AsyncOpenAI(
     api_key=os.getenv('GROQ_API_KEY'),
