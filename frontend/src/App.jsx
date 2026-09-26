@@ -86,6 +86,15 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  
+  const handleScroll = () => {
+    if (!chatContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    // Show button if we are scrolled up more than 100px from bottom
+    setShowScrollButton(scrollHeight - scrollTop - clientHeight > 100);
+  };
+
   const [selectedModel, setSelectedModel] = useState(MODEL_CATEGORIES[0].models[0]);
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   
@@ -480,7 +489,7 @@ export default function App() {
         <div className="w-10"></div> {/* Spacer */}
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 hide-scrollbar flex flex-col min-h-0 pt-16 md:pt-20 relative" ref={chatContainerRef}>
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 hide-scrollbar flex flex-col min-h-0 pt-16 md:pt-20 relative" ref={chatContainerRef} onScroll={handleScroll}>
         {chatHistory.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-neutral-500 space-y-6">
             <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-2xl opacity-80">
@@ -510,13 +519,22 @@ export default function App() {
           <div ref={chatEndRef} className="h-4 shrink-0" />
       </div>
       
-              <button 
-          onClick={() => { if (chatContainerRef.current) chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight; }} 
-          className="absolute bottom-28 right-8 bg-blue-600 hover:bg-blue-500 text-white rounded-full p-3 shadow-2xl transition-all opacity-70 hover:opacity-100 z-50 flex items-center justify-center animate-bounce"
+      {showScrollButton && (
+        <button 
+          onClick={() => {
+            if (chatContainerRef.current) {
+              chatContainerRef.current.scrollTo({
+                top: chatContainerRef.current.scrollHeight + 5000,
+                behavior: 'smooth'
+              });
+            }
+          }} 
+          className="absolute bottom-28 right-8 bg-blue-600 hover:bg-blue-500 text-white rounded-full p-3 shadow-2xl transition-all opacity-90 hover:opacity-100 z-50 flex items-center justify-center animate-bounce"
           title="Bajar al final"
         >
           <ArrowDown size={24} />
         </button>
+      )}
         <div className="shrink-0 p-4 md:p-6 bg-neutral-950 flex justify-center z-10 border-t border-neutral-900/50 relative">
         <div className="w-full max-w-3xl flex flex-col gap-2 relative">
           <div className="flex items-end bg-[#1e1e1f] p-2 rounded-[32px] shadow-2xl focus-within:bg-[#252526] transition-all border border-neutral-800">
