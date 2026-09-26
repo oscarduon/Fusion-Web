@@ -20,6 +20,7 @@ load_dotenv(os.path.join(BACKEND_DIR, ".env"), override=True)
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
+GROK_API_KEY = os.getenv("GROK_API_KEY", "")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 OSCAR_EMAIL = os.getenv("OSCAR_EMAIL", "").strip().lower()
 AUTH_REQUIRED = os.getenv("AUTH_REQUIRED", "1") == "1"
@@ -36,6 +37,10 @@ if GROQ_API_KEY:
 deepseek_client = None
 if DEEPSEEK_API_KEY:
     deepseek_client = AsyncOpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
+
+grok_client = None
+if GROK_API_KEY:
+    grok_client = AsyncOpenAI(api_key=GROK_API_KEY, base_url="https://api.x.ai/v1")
 
 # ---------------------------------------------------------------------------
 # 3. Paths
@@ -193,6 +198,16 @@ if os.path.exists(_formats_path):
     with open(_formats_path, "r", encoding="utf-8") as f:
         FUSION_FORMATS = json.load(f)
 
+# Base de conocimiento de apéndices B–H del manual (batch, LTKProcessor, AreaProcessor, workflows)
+FUSION_APPENDICES = {}
+_appendix_path = os.path.join(BACKEND_DIR, "data", "fusion_appendices.json")
+if not os.path.exists(_appendix_path): # Fallback for old paths
+    _appendix_path = os.path.join(BACKEND_DIR, "fusion_appendices.json")
+if os.path.exists(_appendix_path):
+    with open(_appendix_path, "r", encoding="utf-8") as f:
+        FUSION_APPENDICES = json.load(f)
+
+
 @app.get("/api/config")
 async def get_config():
     return {"google_client_id": GOOGLE_CLIENT_ID, "auth_required": AUTH_REQUIRED}
@@ -306,9 +321,53 @@ async def delete_project(pid: str, user=Depends(require_auth)):
 # 10. Chat (RAG: Librarian -> Retriever -> Foreman)
 # ---------------------------------------------------------------------------
 def _pick_client(model: str):
-    if "deepseek" in model.lower():
+    m = model.lower()
+    if "deepseek" in m:
         return deepseek_client
+    if "grok" in m:
+        return grok_client
     return groq_client
+
+def _ai_error_message(e: Exception) -> str:
+    """Traduce errores del proveedor de IA a un mensaje claro en español."""
+    status = getattr(e, "status_code", None)
+    body = ""
+    try:
+        if getattr(e, "response", None) is not None:
+            j = e.response.json()
+            err = j.get("error", {})
+            body = err.get("message", "") if isinstance(err, dict) else str(err)
+    except Exception:
+        body = ""
+    low = (str(body) + " " + str(e)).lower()
+    if status == 402 or any(k in low for k in ("insufficient", "balance", "credit", "quota", "billing")):
+        return "⚠️ El proveedor de IA se ha quedado sin créditos o ha superado la cuota. Recarga saldo en el panel del proveedor (DeepSeek, Grok…) o cambia de modelo en los ajustes."
+    if status == 401 or "invalid api key" in low or "invalid_api_key" in low or "incorrect api key" in low:
+        return "⚠️ Clave API no válida. Revisa la clave en el archivo .env del servidor."
+    if status == 429:
+        return "⚠️ Demasiadas peticiones (límite de velocidad del proveedor). Espera unos segundos y reintenta."
+    if status == 404:
+        return "⚠️ Modelo no encontrado en el proveedor. Verifica el nombre del modelo en los ajustes."
+    return ""
+
+_APPENDIX_TRIGGERS = {
+    "batch": ["batch", ".bat", "dos batch", "batch programming", "batch file", "por lotes", "archivo .bat", "procesamiento por lotes", "batch processing"],
+    "ltkprocessor": ["ltkprocessor", "ltk processor", "large acquisition", "large acquisitions", "grandes adquisiciones", "acquisition"],
+    "areaprocessor": ["areaprocessor", "area processor", "multi-processor", "multiprocessor", "multiproceso", "multi-core", "multicore", "multi core", "parallel processing", "paralelo", "multiple processors", "varios procesadores"],
+    "retiling": ["retiling", "retile", "re-tile", "teselas", "tiles", "repartir teselas", "dividir en teselas", "re-tessellation"],
+    "return_density_raster": ["return density", "densidad de retorno", "return-density", "return density raster"],
+    "esri_grid_to_ascii": ["esri grid", "esri", "grid to ascii", "ascii raster", "grid ascii", "gdal"],
+    "plot_adjustment": ["plot adjustment", "ajuste de parcela", "ajuste de arbol", "plot and individual", "parcela", "arboles individuales", "individual trees"],
+}
+def _appendix_rag(text: str, limit: int = 2) -> str:
+    text_l = text.lower()
+    matches = [k for k, trigs in _APPENDIX_TRIGGERS.items()
+               if k in FUSION_APPENDICES and any(t in text_l for t in trigs)]
+    ctx = ""
+    for k in matches[:limit]:
+        ctx += f"\n\n=== MANUAL OFICIAL - APÉNDICE {k.upper()} ===\n{FUSION_APPENDICES[k]}\n"
+    return ctx
+
 
 # --- RAG: recuperación de extractos del manual por palabras clave ---
 _RAG_STOPWORDS = set(
@@ -446,6 +505,11 @@ def _retrieve_rag(text: str, router_commands: list, limit: int = 6) -> str:
         ctx = _build_rag([c for c, _ in ordered[:limit]])
         if ctx:
             parts.append(ctx)
+    
+    appx = _appendix_rag(text)
+    if appx:
+        parts.append(appx)
+        
     return "\n".join(parts)
 
 @app.post("/api/chat")
@@ -465,12 +529,15 @@ async def chat_endpoint(text: str = Form(...), model: str = Form("llama-3.1-70b-
         "4. If the user asks a FACTUAL/KNOWLEDGE question about FUSION, LiDAR, or a file format (e.g. 'what is the DTM format?', 'how does CanopyModel work?', 'what is the NODATA value?'), output the FUSION tool names whose documentation is most relevant to answering it (for DTM format questions: DTM2ASCII, DTM2TIF, DTMDescribe, DTMHeader). Do NOT reply NONE for knowledge questions."
     )
     try:
-        router_chat = await active_client.chat.completions.create(
+        router_chat = await groq_client.chat.completions.create(
             messages=[{"role": "system", "content": router_sys}, {"role": "user", "content": text}],
-            model=model, temperature=0.0,
+            model="llama-3.1-8b-instant", temperature=0.0,
         )
         commands_needed_str = (router_chat.choices[0].message.content or "").strip()
     except Exception as e:
+        msg = _ai_error_message(e)
+        if msg:
+            return {"transcription": text, "text": msg, "error": "provider"}
         commands_needed_str = "NONE"
         print(f"[router] error: {e}")
 
@@ -512,11 +579,15 @@ async def chat_endpoint(text: str = Form(...), model: str = Form("llama-3.1-70b-
             "pero si la pregunta requiere un dato técnico de FUSION que no tienes verificado, responde que no está en tu manual y NO lo inventes.\n"
         )
 
-    chat = await active_client.chat.completions.create(
-        messages=[{"role": "system", "content": dynamic_sys_prompt}, {"role": "user", "content": text}],
-        model=model, temperature=0.3,
-    )
-    reply = (chat.choices[0].message.content or "").strip()
+    try:
+        chat = await active_client.chat.completions.create(
+            messages=[{"role": "system", "content": dynamic_sys_prompt}, {"role": "user", "content": text}],
+            model=model, temperature=0.3,
+        )
+        reply = (chat.choices[0].message.content or "").strip()
+    except Exception as e:
+        msg = _ai_error_message(e) or "⚠️ Error inesperado al generar la respuesta. Reintenta."
+        return {"transcription": text, "text": msg, "error": "provider"}
     return {"transcription": text, "text": reply}
 
 # ---------------------------------------------------------------------------
