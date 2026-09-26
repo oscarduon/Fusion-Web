@@ -853,6 +853,71 @@ async def github_webhook(request: Request):
     return {"status": "deploying"}
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# 18. File History & Management
+# ---------------------------------------------------------------------------
+@app.get("/api/files")
+async def list_files(user=Depends(require_auth)):
+    if user is None:
+        raise HTTPException(status_code=401, detail="No autenticado")
+        
+    all_files = []
+    for f in glob.glob(os.path.join(fusion_dir, "*")):
+        if not os.path.isfile(f):
+            continue
+        fn = os.path.basename(f)
+        if fn.lower() == "betera15.las" or fn.startswith("temp_exec_"):
+            continue
+            
+        ext = fn.split('.')[-1].lower() if '.' in fn else ''
+        size_mb = round(os.path.getsize(f) / (1024 * 1024), 2)
+        mtime = os.path.getmtime(f)
+        
+        all_files.append({
+            "name": fn,
+            "type": ext,
+            "size_mb": size_mb,
+            "mtime": mtime,
+            "url": f"/files/{fn}"
+        })
+    
+    # Sort by newest first
+    all_files.sort(key=lambda x: x["mtime"], reverse=True)
+    return {"status": "success", "files": all_files}
+
+@app.post("/api/files/delete")
+async def delete_files(request: Request, user=Depends(require_auth)):
+    if user is None:
+        raise HTTPException(status_code=401, detail="No autenticado")
+        
+    body = await request.json()
+    files_to_delete = body.get("files", [])
+    delete_all = body.get("all", False)
+    
+    deleted_count = 0
+    errors = []
+    
+    for f in glob.glob(os.path.join(fusion_dir, "*")):
+        if not os.path.isfile(f):
+            continue
+        fn = os.path.basename(f)
+        if fn.lower() == "betera15.las" or fn.startswith("temp_exec_"):
+            continue
+            
+        if delete_all or fn in files_to_delete:
+            try:
+                os.remove(f)
+                # También intentar borrar la carpeta potree asociada si existe
+                p_dir = os.path.join(potree_dir, fn)
+                if os.path.isdir(p_dir):
+                    import shutil
+                    shutil.rmtree(p_dir, ignore_errors=True)
+                deleted_count += 1
+            except Exception as e:
+                errors.append(f"{fn}: {str(e)}")
+                
+    return {"status": "success", "deleted": deleted_count, "errors": errors}
+
 # 16. Cache headers
 # ---------------------------------------------------------------------------
 @app.middleware("http")

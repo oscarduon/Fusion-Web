@@ -212,6 +212,9 @@ export default function App() {
   const [textContent, setTextContent] = useState(null);
   const [showConsole, setShowConsole] = useState(true);
   const [showDriveMenu, setShowDriveMenu] = useState(false);
+  const [showFileHistoryModal, setShowFileHistoryModal] = useState(false);
+  const [fileHistory, setFileHistory] = useState([]);
+  const [fileHistoryLoading, setFileHistoryLoading] = useState(false);
   const [menuOpenProjectId, setMenuOpenProjectId] = useState(null);
   const [chatWidth, setChatWidth] = useState(600);
   const isDragging = useRef(false);
@@ -510,6 +513,42 @@ export default function App() {
         }, idx * 300);
       }
     });
+  };
+
+  const fetchFileHistory = async () => {
+    setFileHistoryLoading(true);
+    try {
+      const res = await apiFetch('/api/files');
+      const data = await res.json();
+      if (data.status === 'success') {
+        setFileHistory(data.files);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setFileHistoryLoading(false);
+    }
+  };
+
+  const handleDeleteAllFiles = async () => {
+    if (fileHistory.length === 0) return;
+    const wantToDrive = confirm('¿Quieres subir todos los archivos a Google Drive antes de borrarlos permanentemente? (Cancelar = Borrar sin subir)');
+    
+    if (wantToDrive) {
+      await handleDriveUpload(fileHistory.map(f => f.name));
+    }
+    
+    try {
+      const res = await apiFetch('/api/files/delete', { method: 'POST', body: JSON.stringify({ all: true }), headers: {'Content-Type': 'application/json'} });
+      const data = await res.json();
+      if (data.status === 'success') {
+        alert(`Se han borrado ${data.deleted} archivos del servidor.`);
+        setFileHistory([]);
+        updateCurrentProject({ visorFiles: [] });
+      }
+    } catch(e) {
+      alert('Error borrando archivos: ' + e);
+    }
   };
 
   const sortedProjects = [...projects].sort((a, b) => {
@@ -908,6 +947,46 @@ export default function App() {
           <Terminal size={20} className={activeTab === 'visor' ? 'fill-blue-500/20' : ''}/><span className="text-[10px] font-bold">IDE</span>
         </button>
       </nav>
+      {showFileHistoryModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm cursor-pointer" onClick={() => setShowFileHistoryModal(false)}></div>
+          <div className="relative bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+            <div className="flex items-center justify-between p-4 border-b border-neutral-800 shrink-0">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2"><History size={20}/> Historial de Archivos del Servidor</h2>
+              <button onClick={() => setShowFileHistoryModal(false)} className="text-neutral-400 hover:text-white p-2"><X size={20}/></button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
+              {fileHistoryLoading ? (
+                <div className="flex flex-col items-center justify-center py-10 text-neutral-500">
+                  <div className="w-8 h-8 border-2 border-neutral-600 border-t-white rounded-full animate-spin mb-4"></div>
+                  Cargando archivos...
+                </div>
+              ) : fileHistory.length === 0 ? (
+                <div className="text-center py-10 text-neutral-500">No hay archivos guardados en el servidor.</div>
+              ) : (
+                fileHistory.map((f, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-black rounded-xl border border-neutral-800">
+                    <div className="flex items-center gap-3 overflow-hidden pr-2">
+                      {f.type === 'las' || f.type === 'laz' ? <Map size={16} className="text-green-400 shrink-0"/> : f.type === 'dtm' ? <Play size={16} className="text-blue-400 shrink-0"/> : <FileText size={16} className="text-neutral-400 shrink-0"/>}
+                      <span className="truncate text-sm text-neutral-200 font-mono">{f.name}</span>
+                    </div>
+                    <div className="flex items-center gap-4 shrink-0 text-xs text-neutral-500">
+                      <span>{f.size_mb} MB</span>
+                      <a href={f.url} download className="p-1.5 bg-neutral-800 rounded hover:bg-neutral-700 text-white transition"><Download size={14}/></a>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            <div className="p-4 border-t border-neutral-800 bg-black shrink-0 flex justify-end gap-3">
+              <button onClick={() => setShowFileHistoryModal(false)} className="px-4 py-2 rounded-xl text-sm font-semibold text-neutral-300 hover:bg-neutral-800 transition">Cerrar</button>
+              <button onClick={handleDeleteAllFiles} disabled={fileHistory.length === 0} className="px-4 py-2 rounded-xl text-sm font-semibold bg-red-600/20 text-red-400 hover:bg-red-600/30 border border-red-500/30 transition flex items-center gap-2 disabled:opacity-50"><Trash2 size={16}/> Borrar Todos del Servidor</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
