@@ -135,7 +135,7 @@ export default function App() {
 
   useEffect(() => {
     if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [chatHistory, activeTab, isTyping]);
 
@@ -493,11 +493,25 @@ export default function App() {
           </div>
         )}
         {chatHistory.map((msg, i) => renderChatMessage(msg, i))}
-        <div ref={chatEndRef} className="h-4 shrink-0" />
+        
+          {isTyping && (
+            <div className="max-w-[85%] p-4 rounded-2xl shadow-sm text-[15px] leading-relaxed self-start bg-neutral-900 border border-neutral-800 text-neutral-300 mr-auto flex items-center gap-4">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
+              <span className="text-sm font-medium bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent animate-pulse">
+                Procesando con {selectedModel?.name || 'IA'}...
+              </span>
+            </div>
+          )}
+
+          <div ref={chatEndRef} className="h-4 shrink-0" />
       </div>
       
               <button 
-          onClick={() => {if(chatContainerRef.current) chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' })}} 
+          onClick={() => { if (chatContainerRef.current) chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight; }})}} 
           className="absolute bottom-28 right-8 bg-blue-600 hover:bg-blue-500 text-white rounded-full p-3 shadow-2xl transition-all opacity-70 hover:opacity-100 z-50 flex items-center justify-center animate-bounce"
           title="Bajar al final"
         >
